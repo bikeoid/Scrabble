@@ -1,0 +1,37 @@
+﻿@page "/"
+
+<PageTitle>Scrapple</PageTitle>
+
+
+<AuthorizeView Policy="@Policies.IsPlayer">
+    <Authorized>
+        <Games></Games>
+    </Authorized>
+    <NotAuthorized>
+
+        <AuthorizeView Context=SomeOtherName>
+            <Authorized>
+            Thank you ... awaiting Administrator approval.   May take some time...
+
+            <img class="img-fluid" style="margin-left:2rem" alt="Scrapple" src="/images/ScrabbleBoard2.jpg" />
+
+            <p style="margin-left:2rem">
+                Welcome to Scrabble!
+
+            </p>
+
+            </Authorized>
+            <NotAuthorized>
+                <img class="img-fluid" style="margin-left:2rem" alt="Scrapple" src="/images/ScrabbleBoard2.jpg" />
+
+                <p style="margin-left:2rem">
+                    Welcome to Scrabble!
+                </p>
+            </NotAuthorized>
+        </AuthorizeView>
+
+    </NotAuthorized>
+</AuthorizeView>
+
+
+

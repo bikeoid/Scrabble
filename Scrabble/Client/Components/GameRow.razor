@@ -1,0 +1,113 @@
+﻿@{
+    string background = "danger";
+    if (PlayerGame.Active)
+    {
+        if (PlayerGame.MyMove)
+        {
+            background = "info";
+        } else
+        {
+            background = "secondary";
+        }
+    } else if (PlayerGame.IWon)
+    {
+        background = "success";
+    } else
+    {
+        if (PlayerGame.Win_Type == WinTypes.WinType.Win)
+        {
+            background = "danger";
+        } else
+        {
+            background = "primary";
+           
+        }
+    }
+            //PlayerGame. switch
+            //{
+            //    Active  => Game.MyMove ? "info" : "secondary",
+            //    WinnerDto.YouWon => "success",
+            //    WinnerDto.OtherPlayerWon => "danger",
+            //    WinnerDto.Draw => "primary",
+            //    _ => "danger"
+            //};
+}
+
+<a class="game-link" href=@($"/game/{PlayerGame.GameId}")>
+    <div class=@($"game-card ml-3 card text-white bg-{background}")>
+        <div class="card-body">
+            <p>Game with @string.Join(", ", PlayerGame.OppponentUserNames.Select(x => x)), your score @PlayerGame.MyScore, their score  @string.Join(", ", PlayerGame.OtherScores.Select(x => x.ToString())) 
+                 - @GetElapsedTime(PlayerGame.LastMoveOn)
+            </p>
+
+            @if (PlayerGame.Active)
+            {
+                <p>Next player: @(PlayerGame.MyMove ? "you" : PlayerGame.NextPlayerName)</p>
+            } else
+            {
+                if (PlayerGame.IWon)
+                {
+                    <p>You won!</p>
+                } else
+                {
+                    if (PlayerGame.Win_Type == WinTypes.WinType.Win)
+                    {
+                        <p>@PlayerGame.WinnerName won</p>
+                    } else
+                    {
+                        <p>Game outcome: @PlayerGame.Win_Type.ToString()</p>
+                       
+                    }
+                }
+            }
+
+        </div>
+    </div>
+</a>
+
+@code {
+    [Parameter] public GameSummaryDto PlayerGame { get; set; }
+
+
+    private static string GetElapsedTime(DateTime utcDatetime)
+    {
+        TimeSpan ts = DateTime.UtcNow.Subtract(utcDatetime);
+
+        if (ts.TotalSeconds <= 2) return "Now"; // Handle local device offset from server
+
+        // The trick: make variable contain date and time representing the desired timespan,
+        // having +1 in each date component.
+        DateTime date = DateTime.MinValue + ts;
+
+        return ProcessPeriod(date.Year - 1, date.Month - 1, "year")
+               ?? ProcessPeriod(date.Month - 1, date.Day - 1, "month")
+               ?? ProcessPeriod(date.Day - 1, date.Hour, "day", "Yesterday")
+               ?? ProcessPeriod(date.Hour, date.Minute, "hour")
+               ?? ProcessPeriod(date.Minute, date.Second, "minute")
+               ?? ProcessPeriod(date.Second, 0, "second")
+               ?? "Right now";
+    }
+
+    private static string ProcessPeriod(int value, int subValue, string name, string singularName = null)
+    {
+        if (value == 0)
+        {
+            return null;
+        }
+        if (value == 1)
+        {
+            if (!String.IsNullOrEmpty(singularName))
+            {
+                return singularName;
+            }
+            string articleSuffix = name[0] == 'h' ? "n" : String.Empty;
+            return subValue == 0
+                ? String.Format("A{0} {1} ago", articleSuffix, name)
+                : String.Format("About a{0} {1} ago", articleSuffix, name);
+        }
+        return subValue == 0
+            ? String.Format("{0} {1}s ago", value, name)
+            : String.Format("About {0} {1}s ago", value, name);
+    }
+
+}

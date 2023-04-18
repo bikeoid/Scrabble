@@ -1,0 +1,136 @@
+﻿@page "/PlayerSettings"
+
+@using Scrabble.Shared
+@using System.Text.Json
+
+@inject HttpClient Http
+@inject IModalService Modal
+@inject NavigationManager NavigationManager
+
+
+<h3>Player Settings</h3>
+
+
+<div class="container">
+    @if (editPlayerDto == null)
+    {
+        <div>Player settings not available</div>
+    }
+    else
+    {
+
+        <EditForm Model="editPlayerDto" OnValidSubmit="SubmitForm">
+            <div class="text-danger">
+                @customValidationError
+            </div>
+            <FluentValidationValidator />
+
+            <div>
+                Name: <InputText @bind-Value=@editPlayerDto.Name />
+                <ValidationMessage For="@(() => editPlayerDto.Name)" />
+            </div>
+            <div>
+                <InputCheckbox @bind-Value=@editPlayerDto.EnableSound /> Sound
+            </div>
+            <div>
+                <InputCheckbox @bind-Value=@editPlayerDto.WordCheck /> Check word and score while placing
+            </div>
+            <div>
+                <InputCheckbox @bind-Value=@editPlayerDto.NotifyNewMoveByEmail /> Notify of new moves by Email
+            </div>
+
+            <div class="offset-4 col-8 text-right">
+                <div>@saveMessage</div>
+                <button class="btn btn-primary" type="submit" disabled="@isSubmitting">Save changes</button>
+            </div>
+
+        </EditForm>
+
+
+    }
+
+</div>
+
+
+@code {
+
+    private PlayerDto editPlayerDto{ get; set; }
+
+    private string customValidationError="";
+
+    private bool isSubmitting = false;
+
+    private string saveMessage = "";
+
+
+
+    public override async Task SetParametersAsync(ParameterView parameters)
+    {
+        // CachedPlayer should always be valid on this page
+        var currentPlayerDto = Auth.AuthCache.CachedPlayer;
+
+        if (currentPlayerDto != null)
+        {
+            // Copy edit fields to local edit object
+            editPlayerDto = new PlayerDto();
+            editPlayerDto.PlayerId = currentPlayerDto.PlayerId;
+            editPlayerDto.Email = currentPlayerDto.Email;
+            editPlayerDto.Name = currentPlayerDto.Name;
+            editPlayerDto.EnableSound = currentPlayerDto.EnableSound;
+            editPlayerDto.WordCheck = currentPlayerDto.WordCheck;
+            editPlayerDto.NotifyNewMoveByEmail = currentPlayerDto.NotifyNewMoveByEmail;
+        }
+
+        await base.SetParametersAsync(parameters);
+    }
+
+
+    private async Task SubmitForm()
+    {
+
+        customValidationError = "";
+        // Existing users have been validated; validate new users
+        if (SettingsValid())
+        {
+            try
+            {
+                isSubmitting = true;
+                saveMessage = "Saving...";
+                var response = await Http.PostAsJsonAsync<PlayerDto>("/api/PlayerSettings", editPlayerDto);
+                string json = await response.Content.ReadAsStringAsync();
+                saveMessage = "Saved";
+
+                // Apply options to local copy
+                SaveLocalOptions();
+
+                //Console.WriteLine(response.StatusCode);
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            isSubmitting = false;
+        }
+    }
+
+    private void SaveLocalOptions()
+    {
+        var currentPlayerDto = Auth.AuthCache.CachedPlayer;
+
+        currentPlayerDto.Name = editPlayerDto.Name;
+        currentPlayerDto.EnableSound = editPlayerDto.EnableSound;
+        currentPlayerDto.WordCheck = editPlayerDto.WordCheck;
+        currentPlayerDto.NotifyNewMoveByEmail = editPlayerDto.NotifyNewMoveByEmail;
+    }
+
+
+    private bool SettingsValid()
+    {
+        customValidationError = "";
+        var isValid = true;
+
+        return isValid;
+    }
+
+}
+
+

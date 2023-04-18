@@ -1,0 +1,23 @@
+﻿<div class="square-space">
+
+    @{
+        var squareContainerCss = "square";
+        if (SquareContainer.GetType() == typeof(StartSquare)) squareContainerCss = "center-square-container";
+    }
+    <div class="@squareContainerCss" id="@SquareContainer.ID">
+        <div class=@SquareContainer.CssSelector>
+            <div class="center-square-letter">@SquareContainer.Label</div>
+        </div>
+        @if (!SquareContainer.IsEmpty)
+        {
+            <UITile TilePiece="SquareContainer.Tile"></UITile>
+        }
+    </div>
+</div>
+
+
+@code {
+    [Parameter] public Square SquareContainer { get; set; }
+
+
+}

@@ -1,0 +1,90 @@
+﻿@page "/games"
+
+@using Scrabble.Shared
+@using Scrabble.Client.Data
+@using Scrabble.Client.Components;
+
+@inject HttpClient Http
+@inject IModalService Modal
+@inject NavigationManager NavigationManager
+
+<h3>Games - @Auth.AuthCache.CachedPlayer?.Name</h3>
+
+<div class="container">
+    <div class="row">
+        <button @onclick="NewGame" class="btn btn-success ml-5 mb-4">New Game</button>
+    </div>
+
+    @if (games == null)
+    {
+        <div>Loading games list</div>
+    }
+    else
+    {
+             <div>
+            <h5>Active Games:</h5>
+        </div>
+        @if (activeGameCount == 0)
+        {
+            <p>You don't have any active games</p>
+        }
+        else
+        {
+            foreach (var game in games)
+            {
+                if (game.Active)
+                {
+                    <GameRow PlayerGame=game />
+                }
+            }
+        }
+        <hr />
+        <div>
+            <h5>Recently Finished Games:</h5>
+        </div>
+        @if (finishedGameCount == 0)
+        {
+            <p>You don't have any recent games</p>
+        }
+        else
+        {
+            foreach (var game in games)
+            {
+                if (!game.Active)
+                {
+                    <GameRow PlayerGame=game />
+                }
+            }
+        }
+    }
+</div>
+
+@code {
+    private List<GameSummaryDto> games;
+    private int activeGameCount = 0;
+    private int finishedGameCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        games = await Http.GetFromJsonAsync<List<GameSummaryDto>>($"/api/GameList");
+        foreach (var game in games)
+        {
+            if (game.Active) activeGameCount++; else finishedGameCount++;
+        }
+
+        if (games.Count == 0)
+        {
+            await NewGame();  // Suggest new game for first-time visitors
+        }
+    }
+
+    public async Task NewGame()
+    {
+        var result = await Modal.Show<NewOpponent>("New Game").Result;
+        if (!result.Cancelled)
+        {
+            var gameId = (int)result.Data;
+            NavigationManager.NavigateTo($"/game/{gameId}");
+        }
+    }
+}

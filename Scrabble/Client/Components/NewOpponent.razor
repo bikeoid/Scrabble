@@ -1,0 +1,140 @@
+﻿@inject HttpClient Http
+
+@using System.Net
+@using System.Linq;
+
+
+<div class="container">
+    <div class="alert alert-danger" role="alert" hidden="@HideAlert">
+        @errorMessage
+    </div>
+    <div class="row">
+        <p>Select up to 3 players to challenge to a new game:</p>
+    </div>
+    <div class="row">
+        @if (opponents == null)
+        {
+            <span>Getting Players list</span>
+        } else
+        {
+            foreach (var playerInfo in opponents)
+            {
+                @if (playerInfo.Player.IsPlayer)
+                {
+                    <div>
+                        <InputCheckbox @bind-Value=@playerInfo.Selected @oninput="CheckboxChanged" />
+                        @playerInfo.Player.Name
+                    </div>
+                }
+            }
+        }
+
+    </div>
+    <div class="row">
+        <p>
+            <button @onclick="Submit" class="btn btn-success" disabled=@ButtonDisabled>Start Game</button>
+        </p>
+    </div>
+</div>
+
+
+@code {
+
+    List<SelectedPlayer> opponents;
+    int numOpponents = 0;
+
+    int myPlayerId;
+
+    private string errorMessage;
+
+    public int NewGameId { get; set; } = -1;
+
+    private bool ButtonDisabled => (numOpponents <1 || numOpponents >3);
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
+    private bool HideAlert{ get; set; }
+
+    // Get access to claims
+    [CascadingParameter] private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        HideAlert = true;
+        var allPlayers = await Http.GetFromJsonAsync<List<PlayerDto>>($"/api/Players");
+
+        var authState = await authenticationStateTask;
+        var user = authState.User;
+
+        var myEmail = user.Claims.Where(x => x.Type == AppEmailClaimType.ThisAppEmailClaimType).Select(x => x.Value).FirstOrDefault();
+
+        var otherPlayers = new List<SelectedPlayer>();
+        foreach (var player in allPlayers)
+        {
+            if (player.Email == myEmail)
+            {
+                myPlayerId = player.PlayerId;
+            } else if (player.IsPlayer)
+            {
+                var selectedPlayer = new SelectedPlayer();
+                selectedPlayer.Player = player;
+                otherPlayers.Add(selectedPlayer);
+            }
+        }
+
+        opponents = otherPlayers;
+    }
+
+    private void CheckboxChanged(ChangeEventArgs args)
+    {
+        // get the checkbox state to enable/disable start button
+        var isChecked = (bool)args.Value;
+        if (isChecked)
+        {
+            numOpponents++;
+        }
+        else
+        {
+            numOpponents--;
+        }
+    }
+
+    private async Task Submit()
+    {
+        errorMessage = "";
+        var playerIdList = new List<int>();
+        playerIdList.Add(myPlayerId);
+        foreach(var player in opponents)
+        {
+            if (player.Selected) playerIdList.Add(player.Player.PlayerId);
+        }
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync<List<int>>($"/api/NewGame", playerIdList);
+            if (!response.IsSuccessStatusCode)
+            {
+                HideAlert = false;
+                errorMessage = $"Unable to start game, code: {response.StatusCode.ToString()}";
+                return;
+            }
+            NewGameId = await response.Content.ReadFromJsonAsync<int>();
+
+            await BlazoredModal.CloseAsync(ModalResult.Ok(NewGameId));
+        }catch (Exception ex)
+        {
+            HideAlert = false;
+            errorMessage = $"Something went wrong: {ex.Message}";
+            Console.WriteLine(ex.ToString());
+        }
+
+    }
+
+
+
+    
+
+    private class SelectedPlayer
+    {
+        public PlayerDto Player{ get; set; }
+        public bool Selected{ get; set; }  // For UI selection process
+    }
+}

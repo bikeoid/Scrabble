@@ -1,0 +1,172 @@
+﻿@page "/AdminPlayers"
+
+@using Scrabble.Shared
+@using System.Text.Json
+
+@inject HttpClient Http
+@inject IModalService Modal
+@inject NavigationManager NavigationManager
+
+
+<h3>Player Admin</h3>
+
+
+<div class="container">
+    @if (playerList == null)
+    {
+        <div>Loading player list</div>
+    }
+    else
+    {
+
+        <EditForm Model="playerList" OnValidSubmit="SubmitForm">
+            <div class="text-danger">
+                @customValidationError
+            </div>
+            <FluentValidationValidator />
+
+            <table>
+                <tr>
+                    <th>Player name</th>
+                    <th>Email</th>
+                    <th>Is Approved</th>
+                    <th>Is Admin</th>
+                </tr>
+
+                @foreach (var player in playerList)
+                {
+                    <tr>
+                        @{
+                            var disabled = (player.Email == ComputerPlayerDb.ComputerEmail);
+                            <td>
+                                <InputText @bind-Value=@player.Name disabled=@disabled />
+                                <ValidationMessage For="@(() => player.Name)" />
+                            </td>
+                            <td>@player.Email</td>
+                            <td><InputCheckbox @bind-Value=@player.IsPlayer disabled=@disabled /> </td>
+                            <td><InputCheckbox @bind-Value=@player.IsAdmin disabled=@disabled /> </td>
+                        }
+                    </tr>
+                }
+                @foreach (var player in newPlayers)
+                {
+                    <tr>
+                        @{
+                            <td>
+                                <InputText @bind-Value=@player.Name/>
+                                <ValidationMessage For="@(() => player.Name)" />
+                            </td>
+                            <td>
+                                <InputText @bind-Value=@player.Email />
+                                <ValidationMessage For="@(() => player.Email)" />
+                            </td>
+                            <td><InputCheckbox @bind-Value=@player.IsPlayer /> </td>
+                            <td><InputCheckbox @bind-Value=@player.IsAdmin/> </td>
+                        }
+                    </tr>
+                }
+            </table>
+
+
+            <div class="offset-4 col-8 text-right">
+                <span>@saveMessage</span>
+                <button class="btn btn-primary" type="submit" disabled="@isSubmitting">Save changes</button>
+            </div>
+
+        </EditForm>
+
+
+    }
+
+</div>
+
+
+@code {
+    private List<PlayerDto> playerList = null;
+
+    private List<PlayerDto> newPlayers = new List<PlayerDto>();
+
+    private const int MaxNewSlots = 4;
+
+    private string customValidationError="";
+
+    private bool isSubmitting = false;
+
+    private string saveMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        for (int i=0; i < MaxNewSlots; i++)
+        {
+            var player = new PlayerDto();
+            player.IsPlayer = true; // By default for new users
+            player.Name = "";
+            player.Email = "";
+            newPlayers.Add(player);
+        }
+        playerList = await Http.GetFromJsonAsync<List<PlayerDto>>($"/api/Players");
+    }
+
+
+    private async Task SubmitForm()
+    {
+        customValidationError = "";
+        // Existing users have been validated; validate new users
+        if (NewUsersValid())
+        {
+            var combinedList = new List<PlayerDto>();
+            combinedList.AddRange(playerList);
+            combinedList.AddRange(newPlayers);
+            try
+            {
+                isSubmitting = true;
+                saveMessage = "Saving...";
+                var response = await Http.PostAsJsonAsync<List<PlayerDto>>("/api/Players", combinedList);
+                string json = await response.Content.ReadAsStringAsync();
+                saveMessage = "Saved";
+                //Console.WriteLine(response.StatusCode);
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            isSubmitting = false;
+        }
+    }
+
+
+    private bool NewUsersValid()
+    {
+        customValidationError = "";
+        var isValid = true;
+        foreach (var player in newPlayers)
+        {
+            // If either entered, both have to be populated
+            var email = player.Email;
+            if (!string.IsNullOrEmpty(player.Name) || !string.IsNullOrEmpty(email))
+            {
+                if (string.IsNullOrEmpty(player.Name) || string.IsNullOrEmpty(email))
+                {
+                    customValidationError = "Both name and Email are required for new users";
+                    isValid = false;
+                }
+            }
+        }
+
+        // Ensure at least one admin
+        var foundAdmin = false;
+        foreach (var player in playerList)
+        {
+            if (player.IsAdmin) foundAdmin = true;
+        }
+        if (!foundAdmin)
+        {
+            customValidationError = "At least 1 admin user is required";
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+}
+
+

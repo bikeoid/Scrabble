@@ -1,0 +1,1231 @@
+﻿@page "/game/{gameId:int}"
+
+@using System.Linq
+@using System.Text
+@using Scrabble.Core
+@using Scrabble.Core.Config
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Scrabble.Client.Components
+@using System.Runtime.InteropServices.JavaScript
+@using Scrabble.Shared
+@using Scrabble.Client.Data
+
+
+@*@attribute [Authorize(Roles = "Player, Admin")]*@
+@*@attribute [Authorize(Policy = Policies.IsPlayer)]*@
+
+
+@inject HttpClient Http
+@inject IModalService Modal
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime;
+
+
+@if (IsSubmitting)
+{
+    <div class="overlay">
+        <div class="overlay-content">
+            <h4>Submitting...</h4>
+        </div>
+    </div>
+}
+
+@if (Game.Instance == null || currentGame == null)
+{
+    <p>@LoadMessage</p>
+}
+else
+{
+    <div class="scoreboard" id="scoreboard">
+        <div class="left-players">
+            @for (int i = 0; i < currentGame.players.Count; i++)
+            {
+                // Even players on left side
+                if ((i & 1) == 0)
+                {
+                    <PlayerScore CurrentPlayer="currentGame.players[i]" Score="currentGame.players[i].Score"></PlayerScore>
+                }
+            }
+        </div>
+        @if (currentGame.Players.Count() > 2)
+        {
+            <div class="human-message"> <PreviousMoveList Collapsed=true Title="@MessageForLocalHuman" MoveList="currentGame.RecentMoves"></PreviousMoveList> </div>
+        } else
+        {
+            <div class="human-message">@MessageForLocalHuman</div>
+        }
+        <div class="right-players">
+            @for (int i = 0; i < currentGame.players.Count; i++)
+            {
+                // Odd players on right side
+                if ((i & 1) != 0)
+                {
+                    <PlayerScore CurrentPlayer="currentGame.players[i]" Score="currentGame.players[i].Score"></PlayerScore>
+                }
+            }
+        </div>
+    </div>
+    <div class="game" id="game">
+        <div class="game-element-container">
+            <div class="game-board">
+                @for (int y = 0; y < ScrabbleConfig.BoardLength; y++)
+                {
+                    @for (int x = 0; x < ScrabbleConfig.BoardLength; x++)
+                    {
+                        var square = Game.Instance.PlayingBoard.Get(x, y);
+                        <Scrabble.Client.Components.UISquare SquareContainer="square" />
+                    }
+                }
+            </div>
+        </div>
+
+        <div>&nbsp;</div>
+        <div class="game-element-container">
+            <div class="player-tiles">
+                <button @onclick=Shuffle disabled="@DisabledShuffle()">Shuffle</button>
+                @for (int i = 0; i < TilesInRack.Count; i++)
+                {
+                    var index = i;
+
+                    <UITile @key="TilesInRack[index].ID" TilePiece="TilesInRack[index]"></UITile>
+                }
+                <div class="tile-bag-area">
+                    <div class="tile-bag">
+                        @currentGame.TileBag.Inventory.Count
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="information-buttons">
+            <div class="buttons mt-4 mb-2">
+                @if (!MyMove && MyGamesList.NextUnplayedGameId() > 0)
+                {
+                    <button class="chat-alert" @onclick=NextUnplayedGame>Next Game</button>
+                }
+
+                @if (currentGame.FinalGameStatus == null)
+                {
+                    @if (IsSwapping)
+                    {
+                        <span>(Exchange): Select tiles </span>
+                        <button @onclick=StopSwap disabled="@Disabled()">Cancel</button>
+                        <button @onclick=DoSwap disabled="@Disabled(SwappingTiles.Count == 0 || (SwappingTiles.Count > currentGame.TileBag.Inventory.Count))">Swap</button>
+
+                    }
+                    else if (WordInPlay.Count == 0)
+                    {
+                        <button @onclick=Pass disabled="@Disabled(!MyMove)">Pass</button>
+                        <button @onclick=StartSwap disabled="@Disabled(!MyMove || !CanSwap)">Exchange</button>
+                    }
+                    else
+                    {
+                        <button @onclick=Play disabled="@Disabled(WordInPlay.Count==0 || !validMove)">Play</button>
+                        <button @onclick=Recall disabled="@Disabled(WordInPlay.Count==0)">Recall</button>
+                    }
+                    <button @onclick=Resign disabled="@Disabled()">Resign</button>
+                }
+                else
+                {
+                    <button @onclick=Rematch disabled="@IsSubmitting">Rematch</button>
+                }
+
+                <button class="@ChatAlert()" @onclick=ShowChat>Chat</button>
+            </div>
+
+
+        </div>
+
+        <audio @key="@(audioId)" src="@soundUrl" type="audio/mp3" autoplay>
+            Your browser does not support the html audio tag.
+        </audio>
+
+    </div>
+}
+
+@code {
+
+    private string soundUrl { get; set; }
+    private Guid audioId = Guid.NewGuid();
+
+    private IJSObjectReference _jsModule;
+    private static GameDisplay gameDisplayReference;
+
+    [Parameter] public int GameId { get; set; }
+
+    public List<Square> GameBoardSquares;  // Linear Game board grid elements
+
+    public List<Tile> TilesInRack;
+    public List<UITile> UITilesInRack = new List<UITile>();
+
+    private List<TileInPlay> WordInPlay = new List<TileInPlay>();
+
+    private const string JS_SetTileForDrop = "SetTileForDrop";
+
+    private bool IsSwapping = false;
+    private bool CanSwap => !currentGame.TileBag.IsEmpty;
+    private bool MyMove { get; set; }
+
+    private bool validMove { get; set; }
+
+    private string MessageForLocalHuman { get; set; }
+    private string LoadMessage { get; set; } = "Loading game";
+
+    private List<String> LeftPlayerScores { get; set; }
+    private List<String> RightPlayerScores { get; set; }
+
+    int highestChatSeen = 0;
+
+    private List<Tile> SwappingTiles = new List<Tile>();
+
+    //const string WordFile = "SOWPODS.txt"; // Full, euro dictionary
+    const string WordFile = "TWL06a.txt"; // North America with 181 2022 Scrabble words added dictionary
+
+    private bool Disabled(bool buttonDisabled = false) => buttonDisabled || IsSubmitting || !MyMove;
+    private bool DisabledShuffle(bool buttonDisabled = false) => buttonDisabled || IsSubmitting || (currentGame.FinalGameStatus != null);
+
+
+
+    private HubConnection hubConnection;
+    private Data.ChatParameters chatParameters;
+
+    private GameState currentGame;
+
+    // store all the Javascript actions you want to run **once** after rendering
+    private List<(string command, string parameter)> actionsToRunAfterRender = new List<(string command, string parameter)>();
+
+    // Get access to claims
+    [CascadingParameter] private Task<AuthenticationState> authenticationStateTask { get; set; }
+    private string myEmail;
+
+
+
+    public void PlaySound(string filename)
+    {
+        var player = Auth.AuthCache.CachedPlayer;
+        if (player.EnableSound)
+        {
+            audioId = Guid.NewGuid(); // reload the player
+            soundUrl = $"/sounds/{filename}";
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManager.LocationChanged += async (o, e) =>
+        {
+            Console.WriteLine($"Naviagated to: {e.Location}");
+            if (hubConnection != null && !e.Location.Contains("/game/"))
+            {
+                try { await hubConnection.StopAsync(); }
+                catch (Exception exception) { Console.WriteLine(exception.Message); }
+                finally { await hubConnection.DisposeAsync(); }
+
+                Console.WriteLine("*** GameState: Removed hub connection.");
+                hubConnection = null;
+            }
+            if (hubConnection != null &&  e.Location.Contains("/game/"))
+            {
+                // Navigated to new game id from within game different; log in new game to hub
+                await hubConnection.InvokeAsync("ReceiveGameLogin", GameId);
+            }
+
+        };
+
+        Console.WriteLine($"OnInitialized: Game ID={GameId}");
+
+        await SetupHub();
+
+        _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./scripts/DragAndDrop.js?v3");
+    }
+
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var authState = await authenticationStateTask;
+        var user = authState.User;
+
+        myEmail = user.Claims.Where(x => x.Type == AppEmailClaimType.ThisAppEmailClaimType).Select(x => x.Value).FirstOrDefault();
+        Console.WriteLine($"myEmail={myEmail}");
+
+        MessageForLocalHuman = "New game";
+        gameDisplayReference = this;
+        await LoadGameAsync();
+        var nPlayerRows = (currentGame.Players.Count() + 1) / 2;
+        await _jsModule.InvokeVoidAsync("InitializeDragAndDrop", nPlayerRows);
+
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // run all the actions (.NET code) **once** after rendering
+
+        var localActions = new List<(string command, string parameter)>();
+        localActions.AddRange(actionsToRunAfterRender);
+        actionsToRunAfterRender.Clear();
+
+        foreach (var jsAction in localActions)
+        {
+            await _jsModule.InvokeVoidAsync(jsAction.command, jsAction.parameter);
+        }
+        // clear the actions to make sure the actions only run **once**
+        //actionsToRunAfterRender.Clear();
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task CheckDictionary()
+    {
+        var player = Auth.AuthCache.CachedPlayer;
+        if (player != null)
+        {
+            if (player.WordCheck)
+            {
+                // Lengthy; can't multithread in browser yet
+                await Data.WordLookupSingleton.InitializeWordListInstance(Http, WordFile);
+            }
+        }
+    }
+
+    private async Task LoadGameAsync()
+    {
+        await CheckDictionary();
+
+        try
+        {
+            await BuildGame();
+        }
+        catch (Exception ex)
+        {
+            LoadMessage = $"Problem loading game: {ex.Message}";
+            Console.WriteLine(ex.ToString());
+            return;
+        }
+
+
+    }
+
+
+
+
+    private async Task BuildGame()
+    {
+        GameState newGame = null;
+        if (GameId > 0)
+        {
+            var gameDto = await Http.GetFromJsonAsync<GameDto>($"/api/Game/{GameId}");
+
+            newGame = new GameState(new List<Player>(), Data.WordLookupSingleton.Instance);
+            await ApplyDownloadToGui(newGame, gameDto);
+        }
+        else
+        {
+            // Local standalone setup (no longer works properly)
+            Scrabble.Core.Setup.SetupGameState(Data.WordLookupSingleton.Instance);
+            newGame = Game.Instance;
+            Setup.SetupComputer(newGame);
+            TilesInRack = newGame.InteractivePlayer.Tiles;
+            Game.Instance.Start(0);
+            MyMove = true;
+        }
+        Game.Instance = newGame;
+        currentGame = newGame;
+    }
+
+
+
+    public static void HandleSingleClickOnTile(string tileId)
+    {
+        gameDisplayReference.SelectForSwapping(tileId);
+    }
+
+    private void SelectForSwapping(string tileId)
+    {
+        if (!IsSwapping) return;
+        var rackIndex = FindTileIndexInRack(tileId);
+        if (rackIndex < 0) return;
+
+        var tile = TilesInRack[rackIndex];
+        tile.SelectedForSwap = !tile.SelectedForSwap;   // Toggle X overlay
+        if (tile.SelectedForSwap)
+        {
+            if (SwappingTiles.Count >= currentGame.TileBag.Inventory.Count) return; // alert tone?
+            SwappingTiles.Add(tile);
+        }
+        else
+        {
+            SwappingTiles.Remove(tile);
+        }
+        StateHasChanged();
+    }
+
+
+
+    public static void HandleDoubleClickOnTile(string tileId)
+    {
+        gameDisplayReference.SendTileToRack(tileId);
+    }
+
+    private void SendTileToRack(string tileId)
+    {
+        var wordInPlayIndex = FindTileIndexInWordInPlay(tileId);
+        if (wordInPlayIndex >= 0)
+        {
+            var tileInPlay = WordInPlay[wordInPlayIndex];
+            if (tileInPlay.Tile.Score == 0) tileInPlay.Tile.SetBlankLetter(' ');
+            tileInPlay.Tile.TileInRack = true;
+            var fromSquare = currentGame.PlayingBoard.Get(tileInPlay.BoardPosition);
+            WordInPlay.RemoveAt(wordInPlayIndex);
+            fromSquare.Tile = null;
+            TilesInRack.Add(tileInPlay.Tile);
+            tileInPlay.Tile.TileInRack = true;
+            actionsToRunAfterRender.Add((JS_SetTileForDrop, tileId));  // Re-enable for dropped tile
+            EvaluateMove();
+            StateHasChanged();
+        }
+    }
+
+
+    /// <summary>
+    /// Called from Javascript after object drop
+    /// </summary>
+    /// <param name="dragId">'id' attribute of dragged object</param>
+    /// <param name="dropId">'id' attribute of object dropped into</param>
+    /// <returns></returns>
+    [JSInvokable("HandleDropAsync")]
+    public static async Task HandleDropAsync(string dragId, string dropId)
+    {
+        Console.WriteLine($"Drop {dragId} onto {dropId}");
+        if (gameDisplayReference.IsSwapping) return;
+
+        if (dragId.StartsWith("Tile") && dropId.StartsWith("Tile"))
+        {
+            await gameDisplayReference.HandleDropTileOnTile(dragId, dropId);
+        }
+        else if (dragId.StartsWith("Tile") && dropId.StartsWith("Square"))
+        {
+            await gameDisplayReference.HandleDropTileOnSquare(dragId, dropId);
+        }
+
+        gameDisplayReference.EvaluateMove();
+        gameDisplayReference.StateHasChanged();
+        //return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Drop tile onto square; square will be empty because tiles are given a drop priority
+    /// </summary>
+    /// <param name="dragId"></param>
+    /// <param name="dropId"></param>
+    private async Task HandleDropTileOnSquare(string dragId, string dropId)
+    {
+        if (!MyMove) return; // Disallow board moves while awaiting partner move
+
+        var sourceRackIndex = FindTileIndexInRack(dragId); // If starting from rack
+        var squareInfo = FindSquareInfo(dropId);
+        if (squareInfo == null) return;
+        var targetSquare = currentGame.PlayingBoard.Get(squareInfo.Value.row, squareInfo.Value.col);
+
+        if (sourceRackIndex >= 0)
+        {
+            // Dragging from Rack to board
+            var moveTile = TilesInRack[sourceRackIndex];
+            moveTile.TileInRack = true;
+            if (moveTile.Score == 0)
+            {
+                // Assign letter to blank tile
+                var newLetter = await GetBlankTileLetter();
+                if (newLetter == '#') return; // User cancelled
+                moveTile.SetBlankLetter(char.ToUpper(newLetter));
+            }
+
+            targetSquare.Tile = moveTile;
+            TilesInRack.RemoveAt(sourceRackIndex);
+            moveTile.TileInRack = false;
+            WordInPlay.Add(new TileInPlay(targetSquare.BoardPosition, moveTile));
+
+            actionsToRunAfterRender.Add((JS_SetTileForDrop, dragId));  // Re-enable for dropped tile
+        }
+        else
+        {
+            var wordInPlayIndex = FindTileIndexInWordInPlay(dragId);
+            if (wordInPlayIndex >= 0)
+            {
+                // Dragging from one square to another empty square
+                var tileInPlay = WordInPlay[wordInPlayIndex];
+                var leavingSquare = currentGame.PlayingBoard.Get(tileInPlay.BoardPosition);
+                leavingSquare.Tile = null;
+                await InvokeAsync(StateHasChanged); // Notify of removed tile
+
+                targetSquare.Tile = tileInPlay.Tile;
+                tileInPlay.BoardPosition = targetSquare.BoardPosition;   // Update board position for WordInPlay
+                actionsToRunAfterRender.Add((JS_SetTileForDrop, dragId));  // Re-enable for dropped tile
+
+            }
+
+
+        }
+
+    }
+
+    private (int row, int col)? FindSquareInfo(string squareId)
+    {
+        var squareDetail = squareId.Split(',');
+        if (squareDetail.Length < 3) return null;
+        int row = 0;
+        if (!Int32.TryParse(squareDetail[1], out row)) return null;
+        int col = 0;
+        if (!Int32.TryParse(squareDetail[2], out col)) return null;
+
+        if (row > ScrabbleConfig.BoardLength || col > ScrabbleConfig.BoardLength) return null;
+
+        return (row, col);
+    }
+
+
+    /// <summary>
+    /// Drop tile onto tile: might be to reorder player's tile rack or to replace a letter on board in play
+    /// </summary>
+    /// <param name="dragId"></param>
+    /// <param name="dropId"></param>
+    private async Task HandleDropTileOnTile(string dragId, string dropId)
+    {
+        var sourceRackIndex = FindTileIndexInRack(dragId);
+        var targetRackIndex = FindTileIndexInRack(dropId);
+        if (sourceRackIndex >= 0 && targetRackIndex >= 0)
+        {
+            // Reorder tiles in tile rack
+            var moveTile = TilesInRack[sourceRackIndex];
+            TilesInRack.RemoveAt(sourceRackIndex);
+            TilesInRack.Insert(targetRackIndex, moveTile);
+
+        }
+        else if (sourceRackIndex >= 0)
+        {
+            // Dropping from rack on another tile on the board
+            var wordInPlayIndex = FindTileIndexInWordInPlay(dropId);
+            if (wordInPlayIndex >= 0)
+            {
+                var tileToPlace = TilesInRack[sourceRackIndex];
+                if (tileToPlace.Score == 0)
+                {
+                    // Assign letter to blank tile before drop
+                    var newLetter = await GetBlankTileLetter();
+                    if (newLetter == '#') return; // User cancelled
+                    tileToPlace.SetBlankLetter(char.ToUpper(newLetter));
+                }
+
+
+                var tileInPlay = WordInPlay[wordInPlayIndex];
+                tileInPlay.Tile.TileInRack = true;
+                if (tileInPlay.Tile.Score == 0) tileInPlay.Tile.SetBlankLetter(' ');
+                var square = currentGame.PlayingBoard.Get(tileInPlay.BoardPosition);
+                TilesInRack.RemoveAt(sourceRackIndex);
+
+                // Return tile from play to player rack
+                var tileToRemove = tileInPlay.Tile;
+                WordInPlay.RemoveAt(wordInPlayIndex);
+                TilesInRack.Add(tileToRemove);
+                tileToRemove.TileInRack = true;
+                square.Tile = null;
+                await InvokeAsync(StateHasChanged); // Notify of removed tile
+
+                // Place tile on board
+                square.Tile = tileToPlace;
+                tileToPlace.TileInRack = false;
+                WordInPlay.Add(new TileInPlay(square.BoardPosition, tileToPlace));
+                actionsToRunAfterRender.Add((JS_SetTileForDrop, dragId));  // Re-enable for dragged tile
+                actionsToRunAfterRender.Add((JS_SetTileForDrop, dropId));  // Re-enable for tile sent to rack
+            }
+            else
+            {
+                // Tile was already played
+            }
+
+        }
+        else
+        {
+            // Check for dragging from one board square to drop onto another tile board square
+            var wordInPlayDragIndex = FindTileIndexInWordInPlay(dragId);
+            var wordInPlayDropIndex = FindTileIndexInWordInPlay(dropId);
+            if (wordInPlayDragIndex >= 0 && wordInPlayDropIndex >= 0)
+            {
+                // eligible for drop in place of drop target tile
+                var dragTileInPlay = WordInPlay[wordInPlayDragIndex];
+                var dropTileInPlay = WordInPlay[wordInPlayDropIndex];
+                var fromSquare = currentGame.PlayingBoard.Get(dragTileInPlay.BoardPosition);
+                var toSquare = currentGame.PlayingBoard.Get(dropTileInPlay.BoardPosition);
+                var tileToMove = dragTileInPlay.Tile;
+
+                // Return tile from play to player rack
+                var tileToRemove = dropTileInPlay.Tile;
+                if (tileToRemove.Score == 0) tileToRemove.SetBlankLetter(' ');
+                tileToRemove.TileInRack = true;
+                WordInPlay.RemoveAt(wordInPlayDropIndex);
+                TilesInRack.Add(tileToRemove);
+                fromSquare.Tile = null;
+                await InvokeAsync(StateHasChanged); // Notify of removed tile
+
+                // Place tile on board
+                toSquare.Tile = tileToMove;
+                dragTileInPlay.BoardPosition = dropTileInPlay.BoardPosition;  // Update board position for WordInPlay
+                actionsToRunAfterRender.Add((JS_SetTileForDrop, dragId));  // Re-enable for dropped tile
+                actionsToRunAfterRender.Add((JS_SetTileForDrop, dropId));  // Re-enable for tile in rack
+
+            }
+
+
+        }
+
+    }
+
+    /// <summary>
+    /// Check if tile ID in player rack
+    /// </summary>
+    /// <param name="tileId"></param>
+    /// <returns>Index into list, -1 if not found</returns>
+    private int FindTileIndexInRack(string tileId)
+    {
+        var foundIndex = -1;
+        for (int i = 0; i < TilesInRack.Count; i++)
+        {
+            if (TilesInRack[i].ID == tileId)
+            {
+                return i;
+            }
+        }
+        return foundIndex;
+    }
+
+    /// <summary>
+    /// Check if tile ID in play
+    /// </summary>
+    /// <param name="tileId"></param>
+    /// <returns>Index into list, -1 if not found</returns>
+    private int FindTileIndexInWordInPlay(string tileId)
+    {
+        var foundIndex = -1;
+        for (int i = 0; i < WordInPlay.Count; i++)
+        {
+            if (WordInPlay[i].Tile.ID == tileId)
+            {
+                return i;
+            }
+        }
+        return foundIndex;
+    }
+
+
+    private bool isSubmitting;
+    private bool IsSubmitting
+    {
+        get { return isSubmitting; }
+        set
+        {
+            isSubmitting = value;
+            StateHasChanged();
+        }
+    }
+
+    Tile lastTileWithMoveScore = null;
+
+    /// <summary>
+    /// Update move score, validity after each player action
+    /// </summary>
+    private void EvaluateMove()
+    {
+        if (lastTileWithMoveScore != null)
+        {
+            lastTileWithMoveScore.MoveScore = null;
+            lastTileWithMoveScore = null;
+        }
+
+        var testMove = new List<(Coordinate coord, Tile tile)>();
+        foreach (var tileInPlay in WordInPlay)
+        {
+            testMove.Add(new(tileInPlay.BoardPosition, tileInPlay.Tile));
+        }
+
+        validMove = false;
+        int score = 0;
+        if (testMove.Count > 0)
+        {
+            try
+            {
+                var move = new Move(currentGame, testMove, false);
+                if (move.IsValid)
+                {
+                    validMove = true;
+                    score = move.Score;
+                    if (score < 0) score = 0; // Invalid move
+                }
+            }
+            catch (Exception)
+            {
+                score = 0;
+            }
+
+            if (currentGame.Dictionary != null)
+            {
+                lastTileWithMoveScore = testMove[testMove.Count - 1].tile;
+                lastTileWithMoveScore.MoveScore = score;
+            }
+        }
+
+    }
+
+
+
+
+    private async Task Recall()
+    {
+        // Restore tile in play to the player rack
+        foreach (var tileInPlay in WordInPlay)
+        {
+            TilesInRack.Add(tileInPlay.Tile);
+            actionsToRunAfterRender.Add((JS_SetTileForDrop, tileInPlay.Tile.ID));
+            var squareToClear = currentGame.PlayingBoard.Get(tileInPlay.BoardPosition);
+            squareToClear.Tile = null;
+            tileInPlay.Tile.MoveScore = null;
+            tileInPlay.Tile.TileInRack = true;
+            if (tileInPlay.Tile.Score == 0) tileInPlay.Tile.SetBlankLetter(' ');
+            await InvokeAsync(StateHasChanged); // Notify of removed tile
+        }
+        WordInPlay.Clear();
+
+    }
+
+    private void StartSwap()
+    {
+        IsSwapping = true;
+        StateHasChanged();  // update buttons enable /disable
+    }
+
+    private async void StopSwap()
+    {
+        IsSwapping = false;
+        SwappingTiles.Clear();
+        foreach (var tile in TilesInRack)
+        {
+            if (tile.SelectedForSwap)
+            {
+                tile.SelectedForSwap = false;
+                await InvokeAsync(StateHasChanged); // Notify of removed overlay
+            }
+        }
+    }
+
+    private async Task DoSwap()
+    {
+        try
+        {
+            IsSubmitting = true;
+
+            var response = await Http.PostAsJsonAsync<List<Tile>>($"/api/Exchange/{GameId}", TilesInRack);
+            if (!response.IsSuccessStatusCode)
+            {
+                MessageForLocalHuman = $"Unable to make move, exchange: {response.StatusCode.ToString()}";
+                return;
+            }
+            var gameDto = await response.Content.ReadFromJsonAsync<GameDto>();
+
+            await ApplyDownloadToGui(currentGame, gameDto);
+        }
+        catch (Exception ex)
+        {
+            IsSubmitting = false;
+            MyMove = true;
+
+            MessageForLocalHuman = $"Unable to make exchange: {ex.Message}";
+            return;
+
+        }
+        IsSubmitting = false;
+
+        SwappingTiles.Clear();
+        IsSwapping = false;
+
+        StateHasChanged();
+    }
+
+
+    private async Task Play()
+    {
+        var nPlayed = WordInPlay.Count;
+
+        try
+        {
+            IsSubmitting = true;
+            MyMove = false;
+
+            var placeMoveDto = new PlaceMoveDto();
+            placeMoveDto.WordInPlay = WordInPlay;
+            placeMoveDto.TilesInRack = TilesInRack;
+            var response = await Http.PostAsJsonAsync<PlaceMoveDto>($"/api/PlaceMove/{GameId}", placeMoveDto);
+            IsSubmitting = false;
+            MyMove = true;
+
+            if (response.StatusCode == System.Net.HttpStatusCode.UnprocessableEntity)
+            {
+                // Invalid move was presented
+                // This case should only be possible with no local word check.
+                MessageForLocalHuman = await response.Content.ReadAsStringAsync();
+                PlaySound("Negative2.mp3");
+                return;
+
+            }
+            else if (!response.IsSuccessStatusCode)
+            {
+                MessageForLocalHuman = $"Unable to make move, code: {response.StatusCode.ToString()}";
+                PlaySound("Negative2.mp3");
+                return;
+            }
+            var gameDto = await response.Content.ReadFromJsonAsync<GameDto>();
+
+            await ApplyDownloadToGui(currentGame, gameDto);
+
+            MessageForLocalHuman = currentGame.RecentMoves[currentGame.RecentMoves.Count - 1];
+            var wasRegularMove = MessageForLocalHuman.Contains(" played "); // Kludge check
+            if (currentGame.players.Count == 2 && wasRegularMove)
+            {
+                MessageForLocalHuman = ""; // Suppress text detail since it's highlighted on tiles (keep cleaner display)
+            }
+
+            if (currentGame.FinalGameStatus == null)
+            {
+                PlaySound("GuitarTada.mp3");
+            } else
+            {
+                // game over
+                PlaySound("GameOver.mp3");
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageForLocalHuman = $"Unable to make move: {ex.Message}";
+            return;
+
+        }
+        IsSubmitting = false;
+
+        StateHasChanged();
+
+        Console.WriteLine($"Played {nPlayed}, have {TilesInRack.Count} tiles");
+    }
+
+    /// <summary>
+    /// Search list of players in current game for self, based on Email
+    /// </summary>
+    /// <returns></returns>
+    private Player FindSelf(GameState newGame)
+    {
+        foreach (var player in newGame.Players)
+        {
+            if (player.Email == myEmail) return player;
+        }
+        return null;
+    }
+
+
+    private async Task PerformNoMove(bool resigning)
+    {
+        try
+        {
+            IsSubmitting = true;
+            var response = await Http.PostAsJsonAsync<bool>($"/api/NoMove/{GameId}", resigning);
+            isSubmitting = false;
+            if (!response.IsSuccessStatusCode)
+            {
+                MessageForLocalHuman = $"Unable to make move: {response.StatusCode.ToString()}";
+                return;
+            }
+            var gameDto = await response.Content.ReadFromJsonAsync<GameDto>();
+
+            await ApplyDownloadToGui(currentGame, gameDto);
+
+        }
+        catch (Exception ex)
+        {
+
+            MessageForLocalHuman = $"Something went wrong: {ex.Message}";
+            Console.WriteLine(ex.ToString());
+        }
+        IsSubmitting = false;
+        StateHasChanged();
+    }
+
+
+    private async Task Pass()
+    {
+        //var options = new ModalOptions()
+        //    {
+        //        Position = ModalPosition.BottomLeft,
+        //        //DisableBackgroundCancel = true
+        //        Size = ModalSize.Small
+        //    };
+        var result = await Modal.Show<ConfirmationDialogue>("Are you sure you want to pass?").Result;
+        if (!result.Cancelled)
+        {
+
+            await PerformNoMove(false);
+
+        }
+    }
+
+    private void Shuffle()
+    {
+        TilesInRack.Shuffle();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Change class of chat button to alert when there
+    /// are new messages
+    /// </summary>
+    /// <returns></returns>
+    private string ChatAlert()
+    {
+        string chatAlert = "";
+        if (highestChatSeen < Data.ChatList.Instance.Count)
+        {
+            chatAlert = "chat-alert";
+        }
+
+        return chatAlert;
+    }
+
+
+
+
+    private async Task ShowChat()
+    {
+        chatParameters = new Data.ChatParameters();
+        chatParameters.PlayerList = currentGame.players;
+        chatParameters.GameId = GameId;
+        chatParameters.ChatHub = hubConnection;
+        chatParameters._jsModule = _jsModule;
+        chatParameters.ChatList = Data.ChatList.Instance;
+
+        var parameters = new ModalParameters();
+        parameters.Add("ChatParams", chatParameters);
+
+        var result = await Modal.Show<Chat>("Chat Messages", parameters).Result;
+        chatParameters = null;
+        highestChatSeen = Data.ChatList.Instance.Count;
+        // Update max chat seen in database
+        await hubConnection.InvokeAsync("ReceiveMaxChat", highestChatSeen, GameId);
+    }
+
+    private async Task Resign()
+    {
+        var result = await Modal.Show<ConfirmationDialogue>("Are you sure you want to resign?").Result;
+        if (!result.Cancelled)
+        {
+            await PerformNoMove(true);
+        }
+    }
+
+
+    private async Task NextUnplayedGame()
+    {
+        var nextGameId = MyGamesList.NextUnplayedGameId();
+        if (nextGameId > 0)
+        {
+            await _jsModule.InvokeVoidAsync("CleanupDragAndDrop", null);
+            NavigationManager.NavigateTo($"/game/{nextGameId}");
+        }
+
+    }
+
+
+    // Passed to the GameViewModel, which uses it to prompt user for a letter for a blank tile
+    private async Task<char> GetBlankTileLetter()
+    {
+        var result = await Modal.Show<BlankLetterSelector>("Select a Letter").Result;
+        if (result.Cancelled)
+        {
+            return '#';
+        }
+        else
+        {
+            return (char)result.Data;
+        }
+    }
+
+    private async Task ApplyDownloadToGui(GameState newGame, GameDto gameDto)
+    {
+        UpdateGameStateFromDto.UpdateGameState(newGame, gameDto.GameState_Dto);
+
+        GameId = gameDto.GameId;
+        Data.ChatList.Instance = gameDto.Chat_Dto;
+        highestChatSeen = gameDto.HighestChatSeen;
+        MessageForLocalHuman = newGame.LastMoveResult;
+
+        var myPlayer = FindSelf(newGame);
+        if (myPlayer == null)
+        {
+            MessageForLocalHuman = $"Lost game consistency: player Email";
+            return;
+        }
+        MyMove = myPlayer.MyTurn;
+        SetTilesInRack(myPlayer.Tiles);
+
+        // Assume all tiles are newly created - reenable drag & drop
+        for (int i = 0; i < TilesInRack.Count; i++)
+        {
+            var tile = TilesInRack[i];
+            actionsToRunAfterRender.Add((JS_SetTileForDrop, tile.ID));
+        }
+
+        WordInPlay.Clear();
+        validMove = false;
+        UpdateGameScore(newGame);
+
+        if (!MyMove)
+        {
+            // Update list of unplayed games
+            var games = await Http.GetFromJsonAsync<List<GameSummaryDto>>($"/api/GameList");
+            MyGamesList.CreateMyUnplayedGameList(games);
+        }
+
+        if (newGame.FinalGameStatus == null)
+        {
+            PlaySound("GuitarTada.mp3");
+        }
+        else
+        {
+            // game over
+            PlaySound("GameOver.mp3");
+        }
+
+    }
+
+    /// <summary>
+    /// Set TilesInRack pointer; tiles may have been shuffled locally while waiting on partner
+    /// players move.  Retain tile order when new game state comes back from server.
+    /// Tiles may have been added or exchanged from the turn.
+    /// </summary>
+    /// <param name="newTiles"></param>
+    private void SetTilesInRack(List<Tile> newTiles)
+    {
+        if (TilesInRack == null){
+            // First assignment
+            TilesInRack = newTiles;
+            return;
+        }
+        for (int i=0; i < newTiles.Count && i < TilesInRack.Count; i++)
+        {
+            var oldTileIndex = FindTileById(newTiles, TilesInRack[i].ID);
+            if (oldTileIndex < 0 || oldTileIndex == i) continue;
+            // Swap tiles to match
+            var tempTile = newTiles[i];
+            newTiles[i] = newTiles[oldTileIndex];
+            newTiles[oldTileIndex] = tempTile;
+        }
+        TilesInRack = newTiles;
+    }
+
+
+    /// <summary>
+    /// Search tile list for Id
+    /// </summary>
+    /// <param name="tileList"></param>
+    /// <param name="tileId"></param>
+    /// <returns></returns>
+    private int FindTileById(List<Tile> tileList, string tileId)
+    {
+        var foundIndex = -1;
+        for (int i = 0; i < tileList.Count; i++)
+        {
+            if (tileList[i].ID == tileId)
+            {
+                return i;
+            }
+        }
+        return foundIndex;
+    }
+
+
+
+    private async Task Rematch()
+    {
+        // Definition of rematch is to submit the same players again for new game
+
+        var playerIdList = new List<int>();
+        foreach (var player in currentGame.Players)
+        {
+            playerIdList.Add(player.PlayerId);
+        }
+        playerIdList.Shuffle(); // Randomize order, even if challenger goes first
+
+        try
+        {
+            IsSubmitting = true;
+            var response = await Http.PostAsJsonAsync<List<int>>($"/api/NewGame", playerIdList);
+            if (!response.IsSuccessStatusCode)
+            {
+                MessageForLocalHuman = $"Unable to start game, code: {response.StatusCode.ToString()}";
+                isSubmitting = false;
+                return;
+            }
+            var newGameId = await response.Content.ReadFromJsonAsync<int>();
+
+            // Notify other possible player(s) logged into this finished game that the rematch has been issued
+            // so that multiple players don't rematch into new / different games
+            await hubConnection.InvokeAsync("BroadcastRematchGame", GameId, newGameId);
+
+            await _jsModule.InvokeVoidAsync("CleanupDragAndDrop", null);
+            NavigationManager.NavigateTo($"/game/{newGameId}");
+
+        }
+        catch (Exception ex)
+        {
+
+            MessageForLocalHuman = $"Something went wrong: {ex.Message}";
+            Console.WriteLine(ex.ToString());
+        }
+        IsSubmitting = false;
+        StateHasChanged();
+    }
+
+
+
+    private async Task SetupHub()
+    {
+        hubConnection = new HubConnectionBuilder()
+        .WithUrl(NavigationManager.ToAbsoluteUri("/movehub"))
+        .WithAutomaticReconnect(new TimeSpan[]
+        {
+            TimeSpan.Zero,
+            TimeSpan.FromSeconds(2),
+            TimeSpan.FromSeconds(10),
+            TimeSpan.FromSeconds(30),
+            TimeSpan.FromSeconds(60),
+            TimeSpan.FromSeconds(90),
+            TimeSpan.FromSeconds(120),
+            TimeSpan.FromSeconds(180)
+        })
+        .Build();
+
+
+        hubConnection.Reconnecting += (exception) =>
+        {
+            Console.WriteLine($"Hub Connection started reconnecting due to an error: {exception}");
+            return Task.CompletedTask;
+        };
+
+
+        hubConnection.Reconnected += async (connectionId) =>
+        {
+            Console.WriteLine($"Hub Connection successfully reconnected. The ConnectionId is now: {connectionId}");
+            await SetGameIdAsync();
+        };
+
+        hubConnection.Closed += (exception) =>
+        {
+            if (exception == null)
+            {
+                Console.WriteLine("Hub Connection closed without error.");
+            }
+            else
+            {
+                Console.WriteLine($"Hub Connection closed due to an error: {exception}");
+            }
+            return Task.CompletedTask;
+        };
+
+        hubConnection.On<int>("ClientReceiveMove", async (gameId) =>
+        {
+            // Opponent has made a move
+            await InvokeAsync(async () =>
+            {
+                GameId = gameId;
+                Console.WriteLine($"ClientReceiveMove for game {gameId}");
+                await BuildGame();
+                StateHasChanged();
+                if (currentGame.FinalGameStatus == null)
+                {
+                    PlaySound("ScrabbleDrop.mp3");
+                }
+                else
+                {
+                    // game over
+                    PlaySound("GameOver.mp3");
+                }
+            }
+
+            );
+        });
+
+        // Chat message just created
+        hubConnection.On<ChatDto>("ClientReceiveChat", (chat) =>
+                {
+                    Data.ChatList.Instance.Add(chat);
+                    if (chatParameters != null && chatParameters.NewMessageRefresh != null)
+                    {
+                        // Play sound only if chat from other player
+                        if (chat.PlayerId != Auth.AuthCache.CachedPlayer.PlayerId)
+                        {
+                            PlaySound("ComedicWhistle.mp3");
+                        }
+                        chatParameters.NewMessageRefresh();
+                    } else
+                    {
+                        PlaySound("ComedicWhistle.mp3");
+                        StateHasChanged();
+                    }
+                });
+
+        //
+        // An opponent has invoked the rematch challenge for this game
+        hubConnection.On<int>("ClientRematch", async (newGameId) =>
+                {
+                    await _jsModule.InvokeVoidAsync("CleanupDragAndDrop", null);
+                    NavigationManager.NavigateTo($"/game/{newGameId}");
+                });
+
+        await hubConnection.StartAsync();
+
+        await SetGameIdAsync();
+    }
+
+
+    /// <summary>
+    /// Notify server which game we're playing
+    /// </summary>
+    /// <returns></returns>
+    private async Task SetGameIdAsync()
+    {
+        await hubConnection.InvokeAsync("ReceiveGameLogin", GameId);
+    }
+
+
+    void UpdateGameScore(GameState gameState)
+    {
+        LeftPlayerScores = new List<String>();
+        RightPlayerScores = new List<String>();
+        int playerCount = 0;
+        foreach (var player in gameState.Players)
+        {
+            var name = player.Name;
+            var score = player.Score;
+
+            var playerScore = $"{name}:{score}";
+            if (playerCount < (gameState.Players.Count() / 2))
+            {
+                LeftPlayerScores.Add(playerScore);
+            }
+            else
+            {
+                RightPlayerScores.Add(playerScore);
+            }
+            playerCount++;
+        }
+    }
+
+
+}

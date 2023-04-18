@@ -1,0 +1,24 @@
+﻿@*Given a list of strings, output as lines separated by BR/ tag*@
+
+@if (InputString != null) {
+    @InputString[0]
+    ;
+
+    @for (int i = 1; i < InputString.Count; i++)
+    {
+        <br />
+    @InputString[i]
+            ;
+    }
+}
+
+@code {
+
+    [Parameter]
+    public List<String> InputString { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        //lines = InputString?.Split('\n');
+    }
+}

@@ -1,0 +1,92 @@
+﻿@page "/TwoLetterWords"
+
+@using Scrabble.Shared
+@using System.Text.Json
+@using System.Text
+
+@inject HttpClient Http
+@inject IModalService Modal
+@inject NavigationManager NavigationManager
+
+
+<h3>Two Letter Words</h3>
+
+
+<div class="container">
+    @if (TwoLetterWordGroups == null)
+    {
+        <div>@loadMessage</div>
+    }
+    else
+    {
+        <ul>
+            @foreach (var wordGroup in TwoLetterWordGroups)
+            {
+                <li>
+                    @wordGroup
+                </li>
+            }
+
+        </ul>
+    }
+
+</div>
+
+
+
+@code {
+    private List<string> TwoLetterWordGroups;  // Grouped by 1st letter
+    private string loadMessage = "Retrieving word list...";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var wordList = await Http.GetFromJsonAsync<List<string>>($"/api/TwoLetterWords");
+            BuildWordGroups(wordList);
+        }
+        catch (Exception ex)
+        {
+            loadMessage = "Problem getting word list: " + ex.Message;
+            Console.WriteLine(ex.ToString());
+        }
+    }
+
+    private void BuildWordGroups(List<string> twoLetterWords)
+    {
+        twoLetterWords.Sort();
+
+        TwoLetterWordGroups = new List<string>();
+        var lastLetter = ' ';
+        var wordGroup = new StringBuilder();
+        var separator = ", ";
+        foreach (var wrd in twoLetterWords)
+        {
+            if (wrd[0] != lastLetter)
+            {
+                if (wordGroup.Length > 0)
+                {
+                    TwoLetterWordGroups.Add(wordGroup.ToString());
+                    wordGroup.Clear();
+                }
+                wordGroup.Append(wrd);
+                lastLetter = wrd[0];
+            } else
+            {
+                wordGroup.Append(separator);
+                wordGroup.Append(wrd);
+            }
+        }
+        if (wordGroup.Length > 0)
+        {
+            TwoLetterWordGroups.Add(wordGroup.ToString());
+        }
+
+    }
+
+
+
+}
+
+

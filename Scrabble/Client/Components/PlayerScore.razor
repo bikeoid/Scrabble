@@ -1,0 +1,29 @@
+﻿@*Display player score, with capability to indicate active player*@
+
+<div class="@PlayerClass">@CurrentPlayer.Name: @Score.ToString()</div>
+
+
+@code {
+    [Parameter] public Player CurrentPlayer { get; set; }
+    [Parameter] public int Score{ get; set; }
+
+    private string PlayerClass { get; set; }
+
+    public override async Task SetParametersAsync(ParameterView parameters)
+    {
+        PlayerClass = "";
+        if (parameters.TryGetValue<Player>(nameof(CurrentPlayer), out var currentPlayer))
+        {
+            if (!(currentPlayer is null))
+            {
+                if (currentPlayer.MyTurn)
+                {
+                    PlayerClass = "player-active-turn";
+                }
+            }
+        }
+
+        await base.SetParametersAsync(parameters);
+    }
+
+}

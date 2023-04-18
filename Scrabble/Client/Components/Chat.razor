@@ -1,0 +1,131 @@
+﻿@using Scrabble.Client.Data;
+@using Scrabble.Shared;
+
+@inject IJSRuntime jsRuntime
+
+<div class="w-100 mb-2 chat-messages" style="min-height:200px;">
+
+    @foreach (var chat in ChatParams.ChatList)
+    {
+        <p class='msg'>
+            <div class='msg-meta'>
+                <span class='who'>@PlayerLookup(chat.PlayerId)</span>
+                <span class='when'>@chat.ChatDate.ToLocalTime().ToString("MM-dd-yyyy hh:mm:ss tt");</span>
+            </div>
+            <span class='what'>@chat.ChatText</span>
+        </p>
+    }
+
+    <textarea class="input-lg" placeholder="enter your comment" @bind="@newMessage" @ref="ChatInput"
+              @onkeydown="@CheckEnter" @bind:event="oninput" @onkeypress:preventDefault="true" disabled="@isSubmitting"></textarea>
+    <button class="btn btn-outline-primary" @onclick="@SendAsync" disabled="@SendDisabled()">Send</button>
+    <div>@problemMessage</div>
+</div>
+
+@code {
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
+
+    [Parameter] public ChatParameters ChatParams{ get; set; }
+
+    protected ElementReference ChatInput;  // set the @ref to mesasge box for attribute
+
+    private bool isSubmitting = false;
+
+    // new message from input box
+    string newMessage = "";
+    string problemMessage = "";
+
+    private Dictionary<int, string> playerLookup = new Dictionary<int, string>();
+
+    public override async Task SetParametersAsync(ParameterView parameters)
+    {
+        if (parameters.TryGetValue<ChatParameters>(nameof(ChatParams), out var chatParams))
+        {
+            if (!(chatParams is null))
+            {
+                chatParams.NewMessageRefresh = OnMessage;
+                foreach (var player in chatParams.PlayerList)
+                {
+                    if (!playerLookup.ContainsKey(player.PlayerId))
+                    {
+                        playerLookup.Add(player.PlayerId, player.Name);
+                    }
+                }
+            }
+        }
+
+        await base.SetParametersAsync(parameters);
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        await ChatParams._jsModule.InvokeVoidAsync("SetFocusToElement", ChatInput);
+    }
+
+    public void OnMessage()
+    {
+        StateHasChanged();
+    }
+
+
+    /// <summary>
+    /// Also accept ENTER to send chat message
+    /// </summary>
+    /// <param name="e"></param>
+    /// <returns></returns>
+    public async Task CheckEnter(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")// Covers: Enter + NumPad Enter + Mobile keyboard Go to(enter)
+        {
+            await SendAsync();
+        }
+    }
+
+
+
+    async Task SendAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(newMessage))
+        {
+            try
+            {
+                problemMessage = "";
+                isSubmitting = true;
+                // send message to server hub where it is received
+                await ChatParams.ChatHub.InvokeAsync("ReceiveChat", newMessage, ChatParams.GameId);
+                //Console.WriteLine("Sent chat message");
+
+                // clear input box
+                newMessage = "";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Chat send error: {ex.Message}");
+            }
+            isSubmitting = false;
+        }
+    }
+
+
+    private bool SendDisabled()
+    {
+        return string.IsNullOrWhiteSpace(newMessage) || isSubmitting;
+    }
+
+
+    /// <summary>
+    /// Get player name from db ID
+    /// </summary>
+    /// <param name="playerId">Player ID from database</param>
+    /// <returns>Name if found, else blank</returns>
+    private string PlayerLookup(int playerId)
+    {
+        if (playerLookup.ContainsKey(playerId))
+        {
+            return playerLookup[playerId];
+        }
+        return "";
+    }
+
+
+}

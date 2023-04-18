@@ -1,0 +1,49 @@
+﻿@*Show collapsible list of previous moves*@
+
+@if (!String.IsNullOrEmpty(Title) && MoveList.Count > 1)
+{
+
+    @if (Collapsed)
+    {
+        <span @onclick="@Toggle" class="oi oi-plus"></span>
+    }
+    else
+    {
+        <span @onclick="@Toggle" class="oi oi-minus"></span>
+    }
+    <span style="padding-left:5px;">@Title</span>
+} else
+{
+    @Title
+}
+
+@if (!Collapsed)
+{
+    <ul>
+        @for (int i=0; i < MoveList.Count; i++)
+        {
+            <li>@MoveList[i]</li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter]
+    public List<string> MoveList { get; set; }
+    [Parameter]
+    public bool Collapsed { get; set; }
+    [Parameter]
+    public string Title { get; set; }
+
+    void Toggle()
+    {
+        Collapsed = !Collapsed;
+        if (Collapsed && MoveList.Count > 0)
+        {
+            Title = MoveList[MoveList.Count - 1];
+        } else
+        {
+            Title = "Previous moves:";
+        }
+    }
+}
