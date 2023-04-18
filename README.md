@@ -42,7 +42,8 @@ The application is configured to use mssqllocaldb but could be redirected to oth
  Email is used in the authentication process to confirm email validity, ownership, and allow user password resets.
  To enable notification Emails, identify your email server credentials and create the following entries with your server information by right-clicking on Scrabble.Server 
  and "Manage user secrets", then enter the information for the Email server:
-
+ created by running this command in the "Package Manager Console" (Select ScrabbleServer as the Default Project):
+``` 
   "AuthMessageSenderOptions:EmailEnabled": "true",
   "AuthMessageSenderOptions:SenderEmail": "johndoe@example.com",
   "AuthMessageSenderOptions:SenderName": "Scrabble Game",
@@ -50,7 +51,7 @@ The application is configured to use mssqllocaldb but could be redirected to oth
   "AuthMessageSenderOptions:SmtpPort": "587",
   "AuthMessageSenderOptions:SmtpAppKey": "xxxxxxxxxxxxxxxx",
   "AuthMessageSenderOptions:SmtpHost": "smtp.example.com"
-
+``` 
 __Note:__ Gmail does not issue app keys unless strong 2-factor authentication is enabled (with hardware security key)  
 
 After the email service is configured, edit the project file Scrabble\Scrabble\Server\Areas\Identity\Pages\Account\RegisterConfirmation.cshtml.cs
@@ -61,10 +62,10 @@ and comment out line 64:  ```DisplayConfirmAccountLink = true;```
 
  To add the option button to log in by Google, obtain an "OAUTH 2.0 Client ID" from Google's cloud services and enter
  keys into the user secrets file:
-
+``` 
   "Authentication:Google:ClientId": "xxxxx..................xxxx.apps.googleusercontent.com",
   "Authentication:Google:ClientSecret": "xxxxxx-xxxxxxxxxxxxxx"
-
+``` 
  ## Layout
  The program should adapt to web browsers all the way from from desktop to mobile.  On mobile the game is best played in portrait mode 
  and has not been adapted to landscape mode.
