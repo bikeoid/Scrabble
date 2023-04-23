@@ -14,11 +14,14 @@ created by running this command in the "Package Manager Console" (Select Scrabbl
 ``` 
 Update-Database -Context "ApplicationDbContext"
 Update-Database -Context "ScrabbleDbContext" 
+Update-Database -Context "MyKeysContext"
 ```
 The first user to register is created as the administrator, along with the computer player.   The computer can
 then be challenged for the first game.
 
 The application is configured to use mssqllocaldb but could be redirected to other SQL databases.
+
+## Note that 1.0.1 requires a 3rd Update-Database statement above for local keys storage
 
  ## Drag and Drop
  Drag and drop is mostly self explanatory but some helpful behavior:

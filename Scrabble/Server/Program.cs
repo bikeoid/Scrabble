@@ -1,22 +1,11 @@
 using Blazored.Modal;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-//using Microsoft.Identity.Web;
 using Scrabble.Server.Hubs;
-//using Microsoft.Identity.Web.UI;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.EntityFrameworkCore;
 using Scrabble.Server.Data;
 using Scrabble.Server.Utility;
 using Scrabble.Server.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Options;
-using System.Runtime.ConstrainedExecution;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.AspNetCore.Hosting.StaticWebAssets;
-using System.Reflection;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,9 +26,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-var programExecutable = System.Reflection.Assembly.GetExecutingAssembly().Location;
-var programPath = System.IO.Path.GetDirectoryName(programExecutable);
-var keyDbPath = Path.Combine(programPath, @"..\db\k");
+// ------- Begin Signing key storage in DB ------------------
+builder.Services.AddDbContext<MyKeysContext>(options =>
+    options.UseSqlServer(connectionString));
+
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<MyKeysContext>();
+// ------- End Signing key storage ------------------
 
 builder.Services.AddIdentityServer()
     .AddApiAuthorization<ApplicationUser, ApplicationDbContext>();

@@ -61,11 +61,12 @@ namespace Scrabble.Server.Controllers
 
             if (player == null)
             {
-                // New player - auto create for later approval
+                // New player - auto create
                 await CreateNewPlayer(userName, email);
 
                 if (RequireAdminApproval)
                 {
+#pragma warning disable CS0162
                     await NotifyAdmin(email);
                 }
             }
