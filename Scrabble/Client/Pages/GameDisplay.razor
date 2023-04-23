@@ -861,12 +861,6 @@ else
 
     private async Task Pass()
     {
-        //var options = new ModalOptions()
-        //    {
-        //        Position = ModalPosition.BottomLeft,
-        //        //DisableBackgroundCancel = true
-        //        Size = ModalSize.Small
-        //    };
         var result = await Modal.Show<ConfirmationDialogue>("Are you sure you want to pass?").Result;
         if (!result.Cancelled)
         {
@@ -913,7 +907,13 @@ else
         var parameters = new ModalParameters();
         parameters.Add("ChatParams", chatParameters);
 
-        var result = await Modal.Show<Chat>("Chat Messages", parameters).Result;
+        var options = new ModalOptions()
+            {
+                Position = ModalPosition.Custom,
+                PositionCustomClass = "chat-position"
+            };
+
+        var result = await Modal.Show<Chat>("Chat Messages", parameters, options).Result;
         chatParameters = null;
         highestChatSeen = Data.ChatList.Instance.Count;
         // Update max chat seen in database

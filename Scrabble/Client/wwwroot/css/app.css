@@ -189,10 +189,28 @@ a.game-link:hover {
     margin-right: auto;
 }
 
+.bm-content {
+    overflow-y: auto;
+}
+
 .blazored-modal {
     position: absolute;
-    top: 20%;
+    bottom: 20%;
     left: 10%;
+}
+
+.new-game-position .blazored-modal {
+    position: absolute;
+    top: 20%;
+    bottom: unset;
+    left: 30%;
+}
+
+.chat-position .blazored-modal {
+    position: absolute;
+    height: 500px;
+    bottom: 20%;
+    right: 10%;
 }
 
 /* for chat input box*/
@@ -202,12 +220,6 @@ textarea {
     width: 80%;
     overflow: auto;
     background: #f7f7f7
-}
-
-/*     .blazored-modal-content */
-.bm-content {
-    height: 500px;
-    overflow-y: auto;
 }
 
 .chat-alert {

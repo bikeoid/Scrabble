@@ -80,7 +80,14 @@
 
     public async Task NewGame()
     {
-        var result = await Modal.Show<NewOpponent>("New Game").Result;
+
+        var options = new ModalOptions()
+            {
+                Position = ModalPosition.Custom,
+                PositionCustomClass = "new-game-position"
+            };
+
+        var result = await Modal.Show<NewOpponent>("New Game", options).Result;
         if (!result.Cancelled)
         {
             var gameId = (int)result.Data;
