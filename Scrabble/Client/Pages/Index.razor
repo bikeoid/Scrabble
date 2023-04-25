@@ -1,11 +1,12 @@
 ﻿@page "/"
+@using Scrabble.Client.Components
 
 <PageTitle>Scrabble</PageTitle>
 
 
 <AuthorizeView Policy="@Policies.IsPlayer">
     <Authorized>
-        <Games></Games>
+        <GameList></GameList>
     </Authorized>
     <NotAuthorized>
 
