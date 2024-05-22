@@ -98,7 +98,7 @@ with the .NET 8 render modes by creating the project new from .NET 8 templates. 
 on upgrading to this code base.   I'll probably fix things for a general purpose proper upgrade with DotNet 9.
 
 * In Program.cs (both client and server), change  __BaseAddress = new Uri("https://www.scrabble.example.com")__ to the deployed server name.
-* Apply database migrations for new Identiy layout:  __Update-Database -Context "MyKeysContext"__
+* Apply database migrations for new Identity layout:  __Update-Database -Context "MyKeysContext"__
 * Browsers tend to cache the .NET 7 Webassembly page: the first time a player loads the .NET 8 site, there's a good chance they'll see
 the spinning loading circle and nothing else.   A SHIFT + reload button or clearing web page cache should correct this.
 * External Google logins are now saved across browser load by default.  The proper fix is a "Remember Me" checkbox being applied to 
