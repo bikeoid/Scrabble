@@ -1,0 +1,30 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="bootstrap/bootstrap.min.css?v=2" />
+    <link rel="stylesheet" href="app.css?v=2" />
+    <link rel="stylesheet" href="Scrabble.Server.styles.css?v=2" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <HeadOutlet @rendermode="RenderModeForPage" />
+</head>
+
+<body>
+    <Routes @rendermode="RenderModeForPage" />
+    <script src="_framework/blazor.web.js?v=2"></script>
+</body>
+
+</html>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private IComponentRenderMode? RenderModeForPage => HttpContext.Request.Path.StartsWithSegments("/Account")
+        ? null
+        //: (new InteractiveWebAssemblyRenderMode(prerender: false));
+        : InteractiveWebAssembly;
+}

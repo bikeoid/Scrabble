@@ -1,5 +1,5 @@
 # Scrabble
-![Scrabble Board](https://camo.githubusercontent.com/86e549ef74a7463d8c7dd8d274cc171ad0a6dca6ae4f5d798e95c5cbf2764c90/68747470733a2f2f677265656e76696c6c656f70656e6d61702e696e666f2f696d616765732f5363726162626c65426f617264332e6a7067 ) 
+![Scrabble Board](./Docs/ScrabbleBoard3.jpg ) 
 
 A Blazor implementation of the classic word game with features:
  * Playing a game of 2-4 players across the Internet either in real time or asynchronously with Email notification.
@@ -9,7 +9,7 @@ A Blazor implementation of the classic word game with features:
  * Immediate feedback when placing tiles for a move to confirm valid word(s) and valid placement
 
 ## Getting started
-The application was developed using Visual Studio 2022 with .NET 7 and Blazor.  Before it can be run, the databases must be
+The application was developed using Visual Studio 2022 with .NET 8 and Blazor.  Before it can be run, the databases must be
 created by running this command in the "Package Manager Console" (Select ScrabbleServer as the Default Project):
 ``` 
 Update-Database -Context "ApplicationDbContext"
@@ -29,7 +29,7 @@ The application is configured to use mssqllocaldb but could be redirected to oth
  * Double click a tile in play on board to send it back to the rack.
 
  ## Player settings
- ![Scrabble Board](https://camo.githubusercontent.com/26035d74a71e2ba6752345ef0a2d496c7d2891be56d0ef48d22320bca0299499/68747470733a2f2f677265656e76696c6c656f70656e6d61702e696e666f2f696d616765732f506c6179657253657474696e67732e4a5047 )   
+ ![Scrabble Board](./Docs/PlayerSettings.JPG )   
  * Sound can be turned off to avoid disturbing those nearby
  * Check word: loads the entire word list dictionary to use for word validation and scoring.  Adds 5-10 seconds to game load time 
  and takes more memory in the browser.
@@ -89,6 +89,20 @@ currently not implemented.
 * Optimized computer algorithms with multiple difficulty levels.
 * Player performance tallies.  (Currently completed games are purged after 30 days)
 * Algorithm such as outlined at https://www.cs.cmu.edu/afs/cs/academic/class/15451-s06/www/lectures/scrabble.pdf
+
+
+## 2024 Upgrde to DotNet 8
+
+I still play the game every day with a small group.   The upgrade to .NET 8 goal was to integrate the new Identity system and become familiar
+with the .NET 8 render modes by creating the project new from .NET 8 templates.  There is little or no user experience improvement.  I made some bad design choices, so there are some imacts
+on upgrading to this code base.   I'll probably fix things for a general purpose proper upgrade with DotNet 9.
+
+* In Program.cs (both client and server), change  __BaseAddress = new Uri("https://www.scrabble.example.com")__ to the deployed server name.
+* Apply database migrations for new Identiy layout:  __Update-Database -Context "MyKeysContext"__
+* Browsers tend to cache the .NET 7 Webassembly page: the first time a player loads the .NET 8 site, there's a good chance they'll see
+the spinning loading circle and nothing else.   A SHIFT + reload button or clearing web page cache should correct this.
+* External Google logins are now saved across browser load by default.  The proper fix is a "Remember Me" checkbox being applied to 
+that setting, but that's a complicated fix with the render model on the login page.
 
 
 # Credits

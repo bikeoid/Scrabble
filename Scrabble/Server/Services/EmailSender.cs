@@ -2,50 +2,67 @@
 using Microsoft.Extensions.Options;
 using System.Net.Mail;
 using System.Net;
+using Scrabble.Server.Data;
+using Microsoft.AspNetCore.Identity;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Scrabble.Server.Services
 {
-    public class EmailSender : IEmailSender
-    {
-        private readonly ILogger _logger;
-        private readonly IConfiguration configuration;
 
-        public EmailSender(/*IOptions<AuthMessageSenderOptions> optionsAccessor, */ILogger<EmailSender> logger, IConfiguration configuration)
-        {
-            _logger = logger;
-            this.configuration = configuration;
-        }
+    public class EmailSender(IOptions<AuthMessageSenderOptions> optionsAccessor, ILogger<EmailSender> logger) : IEmailSender<ApplicationUser>
+    {
+
+
+        public AuthMessageSenderOptions Options { get; } = optionsAccessor.Value;
+
+        public Task SendConfirmationLinkAsync(ApplicationUser user, string email,
+            string confirmationLink) => SendEmailAsync(email, "Confirm your email",
+            $"Please confirm your account by " +
+            $"<a href='{confirmationLink}'>clicking here</a>.");
+
+        public Task SendPasswordResetLinkAsync(ApplicationUser user, string email,
+            string resetLink) => SendEmailAsync(email, "Reset your password",
+            $"Please reset your password by <a href='{resetLink}'>clicking here</a>.");
+
+        public Task SendPasswordResetCodeAsync(ApplicationUser user, string email,
+            string resetCode) => SendEmailAsync(email, "Reset your password",
+            $"Please reset your password using the following code: {resetCode}");
+
+        public Task SendEmailMessage(string email, string subject, string message) =>
+             SendEmailAsync(email, subject, message);
+
 
         public async Task SendEmailAsync(string toEmail, string subject, string message)
         {
 
-            var emailEnabled = configuration["AuthMessageSenderOptions:EmailEnabled"];
+
+            var emailEnabled = Options.EmailEnabled;
             if (emailEnabled == null || string.Compare(emailEnabled, "true", true) != 0)
             {
                 return;
             }
 
-            if (string.IsNullOrEmpty(configuration["AuthMessageSenderOptions:SenderEmail"]))
+            if (string.IsNullOrEmpty(Options.SenderEmail))
             {
                 throw new Exception("Null AuthMessageSenderOptions:SenderEmail");
             }
-            if (string.IsNullOrEmpty(configuration["AuthMessageSenderOptions:SmtpAppKey"]))
+            if (string.IsNullOrEmpty(Options.SmtpAppKey))
             {
                 throw new Exception("Null AuthMessageSenderOptions:SenderName");
             }
-            if (string.IsNullOrEmpty(configuration["AuthMessageSenderOptions:SmtpUsername"]))
+            if (string.IsNullOrEmpty(Options.SmtpUsername))
             {
                 throw new Exception("Null AuthMessageSenderOptions:SmtpUsername");
             }
-            if (string.IsNullOrEmpty(configuration["AuthMessageSenderOptions:SmtpAppKey"]))
+            if (string.IsNullOrEmpty(Options.SmtpAppKey))
             {
                 throw new Exception("Null AuthMessageSenderOptions:SmtpAppKey");
             }
-            if (string.IsNullOrEmpty(configuration["AuthMessageSenderOptions:SmtpPort"]))
+            if (string.IsNullOrEmpty(Options.SmtpPort))
             {
                 throw new Exception("Null AuthMessageSenderOptions:SmtpPort");
             }
-            if (string.IsNullOrEmpty(configuration["AuthMessageSenderOptions:SmtpHost"]))
+            if (string.IsNullOrEmpty(Options.SmtpHost))
             {
                 throw new Exception("Null AuthMessageSenderOptions:SmtpHost");
             }
@@ -55,12 +72,12 @@ namespace Scrabble.Server.Services
         public async Task Execute(string emailSubject, string emailBody, string toEmailAddress)
         {
 
-            var fromEmailAddress = configuration["AuthMessageSenderOptions:SenderEmail"];
-            var fromName = configuration["AuthMessageSenderOptions:SenderName"]; 
-            var smtpUsername = configuration["AuthMessageSenderOptions:SmtpUsername"];
-            var smtpAppKey = configuration["AuthMessageSenderOptions:SmtpAppKey"];
-            var smtpPort = Int32.Parse(configuration["AuthMessageSenderOptions:SmtpPort"]);
-            var smtpHost = configuration["AuthMessageSenderOptions:SmtpHost"];
+            var fromEmailAddress = Options.SenderEmail;
+            var fromName = Options.SenderName;
+            var smtpUsername = Options.SmtpUsername;
+            var smtpAppKey = Options.SmtpAppKey;
+            var smtpPort = Int32.Parse(Options.SmtpPort);
+            var smtpHost = Options.SmtpHost;
 
             //Create an email client to send the emails
             var client = new SmtpClient(smtpHost, smtpPort)
@@ -77,31 +94,15 @@ namespace Scrabble.Server.Services
             mailMessage.From = senderEmail;
             mailMessage.To.Add(new MailAddress(toEmailAddress));
             mailMessage.Body = emailBody;
+            mailMessage.IsBodyHtml = true;
 
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
             await client.SendMailAsync(mailMessage);
-            _logger.LogInformation($"Email to {toEmailAddress}, subject {emailSubject} queued successfully!");
+            logger.LogInformation($"Email to {toEmailAddress}, subject {emailSubject} queued successfully!");
 
 
-            //// Sendgrid example
-            //var client = new SendGridClient(apiKey);
-            //var msg = new SendGridMessage()
-            //{
-            //    From = new EmailAddress("Joe@contoso.com", "Password Recovery"),
-            //    Subject = subject,
-            //    PlainTextContent = message,
-            //    HtmlContent = message
-            //};
-            //msg.AddTo(new EmailAddress(toEmail));
-
-            //// Disable click tracking.
-            //// See https://sendgrid.com/docs/User_Guide/Settings/tracking.html
-            //msg.SetClickTracking(false, false);
-            //var response = await client.SendEmailAsync(msg);
-            //_logger.LogInformation(response.IsSuccessStatusCode
-            //                       ? $"Email to {toEmail} queued successfully!"
-            //                       : $"Failure Email to {toEmail}");
         }
+
     }
 }

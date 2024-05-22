@@ -36,6 +36,7 @@
 
     public override async Task SetParametersAsync(ParameterView parameters)
     {
+
         BlankTileMarkup = "";
         NewTilePlacementMarkup = "";
         TileRackMarkup = "";
@@ -52,16 +53,19 @@
                 }
                 if (tilePiece.NewPlacement)
                 {
-                    NewTilePlacementMarkup = "tile-container-new";
+                    NewTilePlacementMarkup = "tile-container-recent";
                 }
                 if (tilePiece.TileInRack)
                 {
                     TileRackMarkup = "tile-in-rack";
+                } else if (!tilePiece.PinnedOnBoard)
+                {
+                    NewTilePlacementMarkup = "tile-container-new";
                 }
 
                 if (tilePiece.MoveScore.HasValue)
                 {
-                    if (tilePiece.NewPlacement)
+                    if (tilePiece.PinnedOnBoard)
                     {
                         MoveMarkup = "tile-move-score-final";
                     } else

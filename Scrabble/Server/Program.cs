@@ -1,41 +1,37 @@
 using Blazored.Modal;
-using Scrabble.Server.Hubs;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+//using Scrabble.Client.Pages;
+using Scrabble.Server.Components;
+using Scrabble.Server.Components.Account;
+using Scrabble.Server.Hubs;
 using Scrabble.Server.Data;
-using Scrabble.Server.Utility;
 using Scrabble.Server.Services;
-using Microsoft.AspNetCore.Identity.UI.Services;
+using Scrabble.Server.Utility;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Authorization;
+using Scrabble.Shared.Auth;
+using Scrabble.Shared;
 using Microsoft.AspNetCore.DataProtection;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddRazorComponents()
+    .AddInteractiveWebAssemblyComponents();
 
-builder.Services.AddResponseCompression(options =>
-{
-    options.EnableForHttps = false; // true would be a security risk
-});
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<IdentityUserAccessor>();
+builder.Services.AddScoped<IdentityRedirectManager>();
+builder.Services.AddScoped<AuthenticationStateProvider, PersistingServerAuthenticationStateProvider>();
 
-var connectionString = builder.Configuration.GetConnectionString("ScrabbleDbConnection") ?? throw new InvalidOperationException("Connection string 'ScrabbleDbConnection' not found.");
-builder.Services.AddDbContext<ScrabbleDbContext>(options =>
-    options.UseSqlServer(connectionString));
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<ApplicationDbContext>();
-
-// ------- Begin Signing key storage in DB ------------------
-builder.Services.AddDbContext<MyKeysContext>(options =>
-    options.UseSqlServer(connectionString));
-
-builder.Services.AddDataProtection()
-    .PersistKeysToDbContext<MyKeysContext>();
-// ------- End Signing key storage ------------------
-
-builder.Services.AddIdentityServer()
-    .AddApiAuthorization<ApplicationUser, ApplicationDbContext>();
+builder.Services.AddBlazoredModal();
+builder.Services.AddControllersWithViews();
 
 if (!string.IsNullOrEmpty(builder.Configuration["Authentication:Google:ClientId"]))
 {
@@ -46,26 +42,67 @@ if (!string.IsNullOrEmpty(builder.Configuration["Authentication:Google:ClientId"
     });
 }
 
-builder.Services.AddAuthentication();
-  //  .AddIdentityServerJwt(); // https://stackoverflow.com/questions/63661946/how-do-i-authenticate-a-user-in-serverside-controller-in-a-blazor-webassembly-pr
-//.AddJwtBearer("Bearer", options =>
-// {
-//     options.Audience = "api1";
-//     options.Authority = "https://localhost:5000";
-// });
+builder.Services.AddAuthorization();
+builder.Services.AddAuthorizationCore(options =>
+{
+    options.AddPolicy(Policies.IsAdmin, policy =>
+        policy.Requirements.Add(new AdminRequirement()));
+    options.AddPolicy(Policies.IsPlayer, policy =>
+        policy.Requirements.Add(new PlayerRequirement()));
+
+});
+builder.Services.AddSingleton<IAuthorizationHandler, AdminHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, PlayerHandler>();
+
+builder.Services.AddApiAuthorization();
 
 
-builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = IdentityConstants.ApplicationScheme;
+        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+    })
+    .AddIdentityCookies();
+
+var connectionString = builder.Configuration.GetConnectionString("ScrabbleDbConnection") ?? throw new InvalidOperationException("Connection string 'ScrabbleDbConnection' not found.");
+builder.Services.AddDbContext<ScrabbleDbContext>(options =>
+    options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString));
+builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+// ------- Begin Signing key storage in DB ------------------
+builder.Services.AddDbContext<MyKeysContext>(options =>
+    options.UseSqlServer(connectionString));
+
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<MyKeysContext>();
+// ------- End Signing key storage ------------------
+
+builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddSignInManager()
+    .AddDefaultTokenProviders();
+
+//builder.Services.AddHttpClient();
+#if DEBUG
+builder.Services.AddScoped(http => new HttpClient
+{
+    BaseAddress = new Uri("https://localhost:7040")
+});
+#else
+builder.Services.AddScoped(http => new HttpClient
+{
+    BaseAddress = new Uri("https://www.scrabble.example.com")
+});
+#endif
+
+//builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection("AuthMessageSenderOptions"));
+builder.Services.AddSingleton<IEmailSender<ApplicationUser>, EmailSender>();
+builder.Services.AddTransient<IMyEmailSender, MyEmailSender>();
+
 builder.Services.AddSignalR();
-
-
-builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
-
-builder.Services.AddControllersWithViews();
-
-builder.Services.AddRazorPages();
-
-builder.Services.AddBlazoredModal();
 
 var app = builder.Build();
 
@@ -73,43 +110,43 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseWebAssemblyDebugging();
+    app.UseMigrationsEndPoint();
 }
 else
 {
-    app.UseResponseCompression();
-    app.UseExceptionHandler("/Error");
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 
-app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
-
-
-
-
 app.UseRouting();
-
-app.UseIdentityServer();
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapRazorPages();
 app.MapControllers();
 app.MapHub<MoveHub>("/movehub");
-app.MapFallbackToFile("index.html");
 
+app.UseAuthentication();
+app.UseAuthorization(); 
+app.UseAntiforgery();
+
+app.MapRazorComponents<App>()
+    .AddInteractiveWebAssemblyRenderMode()
+    .AddAdditionalAssemblies(typeof(Scrabble.Client._Imports).Assembly);
+
+// Add additional endpoints required by the Identity /Account Razor components.
+app.MapAdditionalIdentityEndpoints();
 
 string rootpath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot");
 string filePath = System.IO.Path.Combine(rootpath, "TWL06a.txt");
 WordLookupSingleton.InitializeWordList(filePath);
 
+var scope = app.Services.CreateScope();
+var client = scope.ServiceProvider.GetRequiredService<HttpClient>();
+AuthCache.AuthHttpClient = client;
 
 app.Run();
-
 
 
 

@@ -24,7 +24,8 @@ public partial class ScrabbleDbContext : DbContext
     public virtual DbSet<PlayerGame> PlayerGames { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Name=ConnectionStrings:ScrabbleDbConnection");
+        => optionsBuilder.UseSqlServer("Name=ConnectionStrings:ScrabbleDbConnection", o => o.UseCompatibilityLevel(120));
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

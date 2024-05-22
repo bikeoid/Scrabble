@@ -1,14 +1,8 @@
 {
   "dependencies": {
-    "signalr1": {
-      "type": "signalr",
-      "connectionId": "Azure:SignalR:ConnectionString",
-      "dynamicId": null
-    },
     "mssql1": {
       "type": "mssql",
-      "connectionId": "ConnectionStrings:ScrabbleDbConnection",
-      "dynamicId": null
+      "connectionId": "ConnectionStrings:ScrabbleDbConnection"
     }
   }
 }

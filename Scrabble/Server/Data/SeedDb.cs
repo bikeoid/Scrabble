@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Scrabble.Core.Types;
-using Scrabble.Client.Components;
 using Scrabble.Shared;
 
 namespace Scrabble.Server.Data

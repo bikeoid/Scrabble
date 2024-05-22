@@ -18,7 +18,7 @@ namespace Scrabble.Core.Types
 
         public int? MoveScore { get; set; }
 
-        public bool NewPlacement { get; set; }
+        public bool NewPlacement{ get; set; }
 
         // Unique id of this tile
         public string ID { get; set; }

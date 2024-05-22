@@ -2,22 +2,15 @@
 using Microsoft.EntityFrameworkCore;
 using Scrabble.Core;
 using Scrabble.Core.Config;
-using Scrabble.Core.Squares;
 using Scrabble.Core.Types;
 using Scrabble.Server.Data;
 using Scrabble.Shared;
-using System.Linq;
-using System.Numerics;
 //using System.Text.Json;
-using Scrabble.Client.Data;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Authorization;
 using Scrabble.Server.Hubs;
 using Microsoft.AspNetCore.SignalR;
-using static Duende.IdentityServer.Models.IdentityResources;
-using Scrabble.Server.Utility;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Identity.UI.Services;
+using Scrabble.Server.Services;
 
 namespace Scrabble.Server.Controllers
 {
@@ -27,10 +20,10 @@ namespace Scrabble.Server.Controllers
     {
         private readonly ScrabbleDbContext scrabbleDb;
         private readonly IHubContext<MoveHub> moveHubContext;
-        IEmailSender emailSender;
+        IMyEmailSender emailSender;
         private readonly ILogger<PlaceMoveController> _logger;
        
-        public PlaceMoveController(ScrabbleDbContext scrabbleDb, IHubContext<MoveHub> moveHubContext, IEmailSender emailSender, ILogger<PlaceMoveController> logger)
+        public PlaceMoveController(ScrabbleDbContext scrabbleDb, IHubContext<MoveHub> moveHubContext, IMyEmailSender emailSender, ILogger<PlaceMoveController> logger)
         {
             this.scrabbleDb = scrabbleDb;
             this.moveHubContext = moveHubContext;

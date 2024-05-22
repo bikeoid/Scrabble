@@ -2,18 +2,15 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Scrabble.Core;
-using Scrabble.Core.Config;
 using Scrabble.Core.Types;
 using Scrabble.Server.Data;
 using Scrabble.Shared;
-using System.Linq;
 //using System.Text.Json;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Scrabble.Server.Hubs;
-using Scrabble.Server.Utility;
-using Microsoft.AspNetCore.Identity.UI.Services;
+using Scrabble.Server.Services;
 
 namespace Scrabble.Server.Controllers
 {
@@ -23,10 +20,10 @@ namespace Scrabble.Server.Controllers
     {
         private readonly ScrabbleDbContext scrabbleDb;
         private readonly IHubContext<MoveHub> moveHubContext;
-        IEmailSender emailSender;
+        IMyEmailSender emailSender;
         private readonly ILogger<ExchangeController> _logger;
 
-        public ExchangeController(ScrabbleDbContext scrabbleDb, IHubContext<MoveHub> moveHubContext, IEmailSender emailSender, ILogger<ExchangeController> logger)
+        public ExchangeController(ScrabbleDbContext scrabbleDb, IHubContext<MoveHub> moveHubContext, IMyEmailSender emailSender, ILogger<ExchangeController> logger)
         {
             this.scrabbleDb = scrabbleDb;
             this.moveHubContext = moveHubContext;

@@ -1,13 +1,17 @@
-﻿
+﻿@using System.Security.Claims
 @using Scrabble.Shared
+@using Scrabble.Shared.Auth
 @using Scrabble.Client.Data
 @using Scrabble.Client.Components;
+
 
 @inject HttpClient Http
 @inject IModalService Modal
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider _authenticationStateProvider
 
-<h3>Games - @Auth.AuthCache.CachedPlayer?.Name</h3>
+
+<h3>Games - @AuthCache.CachedPlayer?.Name</h3>
 
 <div class="container">
     <div class="row">
@@ -65,6 +69,13 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await _authenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (!user.Identity.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/Account/Login", false);
+        }
+
         games = await Http.GetFromJsonAsync<List<GameSummaryDto>>($"/api/GameList");
         foreach (var game in games)
         {

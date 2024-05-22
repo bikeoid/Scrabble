@@ -1,5 +1,7 @@
 ﻿@page "/game/{gameId:int}"
 
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
 @using System.Linq
 @using System.Text
 @using Scrabble.Core
@@ -11,10 +13,7 @@
 @using Scrabble.Shared
 @using Scrabble.Client.Data
 
-
-@*@attribute [Authorize(Roles = "Player, Admin")]*@
-@*@attribute [Authorize(Policy = Policies.IsPlayer)]*@
-
+@attribute [Authorize(Policy = Policies.IsPlayer)]
 
 @inject HttpClient Http
 @inject IModalService Modal
@@ -33,7 +32,7 @@
 
 @if (Game.Instance == null || currentGame == null)
 {
-    <p>@LoadMessage</p>
+    <h1>@LoadMessage</h1>
 }
 else
 {
@@ -170,7 +169,7 @@ else
     private bool validMove { get; set; }
 
     private string MessageForLocalHuman { get; set; }
-    private string LoadMessage { get; set; } = "Loading game";
+    private string LoadMessage { get; set; } = "Loading game...";
 
     private List<String> LeftPlayerScores { get; set; }
     private List<String> RightPlayerScores { get; set; }
@@ -180,10 +179,11 @@ else
     private List<Tile> SwappingTiles = new List<Tile>();
 
     //const string WordFile = "SOWPODS.txt"; // Full, euro dictionary
-    const string WordFile = "TWL06a.txt?v4"; // North America with 181 2022 Scrabble words added dictionary
+    const string WordFile = "TWL06a.txt?v4"; // North America with 181 2022 Scrabble words added dictionary  - ?v(n) added to ensure it's uncached
 
     private bool Disabled(bool buttonDisabled = false) => buttonDisabled || IsSubmitting || !MyMove;
     private bool DisabledShuffle(bool buttonDisabled = false) => buttonDisabled || IsSubmitting || (currentGame.FinalGameStatus != null);
+    private bool initialLoad = true;
 
 
 
@@ -203,7 +203,7 @@ else
 
     public void PlaySound(string filename)
     {
-        var player = Auth.AuthCache.CachedPlayer;
+        var player = AuthCache.CachedPlayer;
         if (player.EnableSound)
         {
             audioId = Guid.NewGuid(); // reload the player
@@ -280,7 +280,7 @@ else
 
     private async Task CheckDictionary()
     {
-        var player = Auth.AuthCache.CachedPlayer;
+        var player = AuthCache.CachedPlayer;
         if (player != null)
         {
             if (player.WordCheck)
@@ -382,7 +382,6 @@ else
             WordInPlay.RemoveAt(wordInPlayIndex);
             fromSquare.Tile = null;
             TilesInRack.Add(tileInPlay.Tile);
-            tileInPlay.Tile.TileInRack = true;
             actionsToRunAfterRender.Add((JS_SetTileForDrop, tileId));  // Re-enable for dropped tile
             EvaluateMove();
             StateHasChanged();
@@ -412,7 +411,7 @@ else
         }
 
         gameDisplayReference.EvaluateMove();
-        gameDisplayReference.StateHasChanged();
+        await gameDisplayReference.InvokeAsync(gameDisplayReference.StateHasChanged);
         //return Task.CompletedTask;
     }
 
@@ -446,6 +445,7 @@ else
             targetSquare.Tile = moveTile;
             TilesInRack.RemoveAt(sourceRackIndex);
             moveTile.TileInRack = false;
+            moveTile.PinnedOnBoard = false;
             WordInPlay.Add(new TileInPlay(targetSquare.BoardPosition, moveTile));
 
             actionsToRunAfterRender.Add((JS_SetTileForDrop, dragId));  // Re-enable for dropped tile
@@ -648,6 +648,7 @@ else
         foreach (var tileInPlay in WordInPlay)
         {
             testMove.Add(new(tileInPlay.BoardPosition, tileInPlay.Tile));
+            
         }
 
         validMove = false;
@@ -797,7 +798,7 @@ else
 
             if (currentGame.FinalGameStatus == null)
             {
-                PlaySound("GuitarTada.mp3");
+                PlaySound("GuitarStrum.mp3");
             } else
             {
                 // game over
@@ -806,6 +807,7 @@ else
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Unable to make move: {ex}");
             MessageForLocalHuman = $"Unable to make move: {ex.Message}";
             return;
 
@@ -994,14 +996,17 @@ else
 
         if (newGame.FinalGameStatus == null)
         {
-            PlaySound("GuitarTada.mp3");
+            if (!initialLoad)
+            {
+                PlaySound("GuitarTada.mp3");
+            }
         }
         else
         {
             // game over
             PlaySound("GameOver.mp3");
         }
-
+        initialLoad = false;
     }
 
     /// <summary>
@@ -1168,7 +1173,7 @@ else
                     if (chatParameters != null && chatParameters.NewMessageRefresh != null)
                     {
                         // Play sound only if chat from other player
-                        if (chat.PlayerId != Auth.AuthCache.CachedPlayer.PlayerId)
+                        if (chat.PlayerId != AuthCache.CachedPlayer.PlayerId)
                         {
                             PlaySound("ComedicWhistle.mp3");
                         }

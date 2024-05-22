@@ -8,11 +8,9 @@ using Scrabble.Shared;
 //using System.Text.Json;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Authorization;
-using Scrabble.Client.Data;
 using Microsoft.AspNetCore.SignalR;
 using Scrabble.Server.Hubs;
-using Scrabble.Server.Utility;
-using Microsoft.AspNetCore.Identity.UI.Services;
+using Scrabble.Server.Services;
 
 namespace Scrabble.Server.Controllers
 {
@@ -22,9 +20,9 @@ namespace Scrabble.Server.Controllers
     {
         private readonly ScrabbleDbContext scrabbleDb;
         private readonly IHubContext<MoveHub> moveHubContext;
-        IEmailSender emailSender;
+        IMyEmailSender emailSender;
 
-        public NoMoveController(ScrabbleDbContext scrabbleDb, IHubContext<MoveHub> moveHubContext, IEmailSender emailSender)
+        public NoMoveController(ScrabbleDbContext scrabbleDb, IHubContext<MoveHub> moveHubContext, IMyEmailSender emailSender)
         {
             this.scrabbleDb = scrabbleDb;
             this.moveHubContext = moveHubContext;

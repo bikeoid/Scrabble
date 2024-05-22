@@ -12,7 +12,11 @@
 
         <AuthorizeView Context=SomeOtherName>
             <Authorized>
-            Thank you ... awaiting Administrator approval.   May take some time...
+                <!--  Note: This message appears both while authenticating, as well as once registered but not approved.
+                       The 2nd case is shown after a delay.  -->
+
+                <h1> @AuthMessage1</h1>
+                <h2> @AuthMessage2</h2>
 
             <img class="img-fluid" style="margin-left:2rem" alt="Scrabble" src="/images/ScrabbleBoard2.jpg" />
 
@@ -34,5 +38,30 @@
     </NotAuthorized>
 </AuthorizeView>
 
+
+
+
+
+
+@code {
+    private const int AuthenticateWaitDelay = 10000; // Milliseconds
+
+    private string AuthMessage1 { get; set; } = "Authorizing..";
+    private string AuthMessage2 { get; set; } = "";
+
+    protected async override Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        var task = Task.Run(UpdateMessage);
+    }
+
+    private async Task UpdateMessage()
+    {
+        await Task.Delay(AuthenticateWaitDelay);
+        AuthMessage1 = "Thank you ... awaiting Administrator approval.";
+        AuthMessage2 = "(May take some time.)";
+        await InvokeAsync(StateHasChanged);
+    }
+}
 
 

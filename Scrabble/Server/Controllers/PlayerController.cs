@@ -2,14 +2,9 @@
 using Scrabble.Server.Data;
 using Scrabble.Shared;
 using Microsoft.EntityFrameworkCore;
-using static Duende.IdentityServer.Models.IdentityResources;
-using Microsoft.Extensions.Logging;
-using Scrabble.Core.Types;
-using Scrabble.Server.Utility;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using Scrabble.Client.Pages;
-using static System.Formats.Asn1.AsnWriter;
+using Scrabble.Server.Services;
+using Microsoft.AspNetCore.Identity;
 
 namespace Scrabble.Server.Controllers
 {
@@ -18,14 +13,14 @@ namespace Scrabble.Server.Controllers
     [ApiController]
     public class PlayerController : ControllerBase
     {
-        private const bool RequireAdminApproval = false;    // Whether to require separate admin approval
+        private const bool RequireAdminApproval = true;    // Whether to require separate admin approval
 
 
         private readonly ScrabbleDbContext scrabbleDb;
         private readonly ILogger<PlayerController> _logger;
-        private readonly IEmailSender emailSender;
+        private readonly IMyEmailSender emailSender;
 
-        public PlayerController(ScrabbleDbContext scrabbleDb, ILogger<PlayerController> logger, IEmailSender emailSender)
+        public PlayerController(ScrabbleDbContext scrabbleDb, ILogger<PlayerController> logger, IMyEmailSender emailSender)
         {
             this.scrabbleDb = scrabbleDb;
             this._logger = logger;
@@ -38,8 +33,8 @@ namespace Scrabble.Server.Controllers
         {
 
 
-            //var userName = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName).Value;
-            var userName = User.FindFirst("name").Value;
+            var userName = User.FindFirst(System.Security.Claims.ClaimTypes.Name).Value;
+            //var userName = User.FindFirst("name").Value;
             var email = User.FindFirst(AppEmailClaimType.ThisAppEmailClaimType).Value;
 
             if (string.IsNullOrEmpty(email))
@@ -61,12 +56,11 @@ namespace Scrabble.Server.Controllers
 
             if (player == null)
             {
-                // New player - auto create
+                // New player - auto create for later approval
                 await CreateNewPlayer(userName, email);
 
                 if (RequireAdminApproval)
                 {
-#pragma warning disable CS0162
                     await NotifyAdmin(email);
                 }
             }
