@@ -937,6 +937,7 @@ else
         var nextGameId = MyGamesList.NextUnplayedGameId();
         if (nextGameId > 0)
         {
+            initialLoad = true;
             await _jsModule.InvokeVoidAsync("CleanupDragAndDrop", null);
             NavigationManager.NavigateTo($"/game/{nextGameId}");
         }
