@@ -65,7 +65,7 @@ function handleWindowSize() {
         scoreArea.style.marginLeft = "auto";
         scoreArea.style.marginRight = "auto";
     }
-    var pixelWidth = Math.floor(boardWidth / 15)-1;
+    var pixelWidth = Math.floor(boardWidth / 15) - 1;
     var squareSize = pixelWidth + "px";
     var innerSquareSize = (pixelWidth - 1) + "px";
     var overscanPixels = Math.round(pixelWidth * 0.14);
@@ -661,7 +661,8 @@ export function SetEventListeners() {
         tile.addEventListener('contextmenu', function (event) {
             event.preventDefault();
             event.stopPropagation();
-        }, true);    });
+        }, true);
+    });
 }
 
 
@@ -695,9 +696,48 @@ export async function InitializeDragAndDrop(nPlayerRows) {
 
         handleWindowSize();  // Auto size game board to window/browser layout
         window.onresize = handleWindowSize;
-   }, 500);
+    }, 500);
 
 }
+
+
+
+
+async function createBlobFromURL(url) {
+    // Fetch the contents of the file from the URL
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error('Network response was not ok ' + response.statusText);
+    }
+
+    // Get the file content as an ArrayBuffer
+    const arrayBuffer = await response.arrayBuffer();
+
+    // Create a Blob from the ArrayBuffer
+    const blob = new Blob([arrayBuffer], { type: response.headers.get('Content-Type') });
+
+    return blob;
+}
+
+// Play the sound specified in the filename URL path
+export function playSound(audioFilename) {
+    // Example usage:
+    //https://www.scrapplegame.us/sounds/Negative2.mp3
+    createBlobFromURL(audioFilename)
+        .then(blob => {
+            console.log('Audio blob created:', blob);
+            const blobURL = window.URL.createObjectURL(blob);
+            var audio0 = new Audio(blobURL);
+            audio0.play();
+
+        })
+        .catch(error => {
+            console.error('Error creating audio Blob:', error);
+        });
+
+}
+
 
 var removeAllEventListener = function (type) {
     if (!listeners[type] || !listeners[type].length)

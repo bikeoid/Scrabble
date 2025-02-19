@@ -9,7 +9,7 @@ A Blazor implementation of the classic word game with features:
  * Immediate feedback when placing tiles for a move to confirm valid word(s) and valid placement
 
 ## Getting started
-The application was developed using Visual Studio 2022 with .NET 8 and Blazor.  Before it can be run, the databases must be
+The application was developed using Visual Studio 2022 with .NET 9 and Blazor.  Before it can be run, the databases must be
 created by running this command in the "Package Manager Console" (Select ScrabbleServer as the Default Project):
 ``` 
 Update-Database -Context "ApplicationDbContext"
@@ -91,18 +91,14 @@ currently not implemented.
 * Algorithm such as outlined at https://www.cs.cmu.edu/afs/cs/academic/class/15451-s06/www/lectures/scrabble.pdf
 
 
-## 2024 Upgrde to DotNet 8
+## 2025 Upgrde to DotNet 9
 
-I still play the game every day with a small group.   The upgrade to .NET 8 goal was to integrate the new Identity system and become familiar
-with the .NET 8 render modes by creating the project new from .NET 8 templates.  There is little or no user experience improvement.  I made some bad design choices, so there are some imacts
-on upgrading to this code base.   I'll probably fix things for a general purpose proper upgrade with DotNet 9.
+I still play the game every day with a small group.
 
-* In the server Program.cs, change  __BaseAddress = new Uri("https://www.scrabble.example.com")__ to the deployed server name.
-* Apply database migrations for new Identity layout:  __Update-Database -Context "MyKeysContext"__
-* Browsers tend to cache the .NET 7 Webassembly page: the first time a player loads the .NET 8 site, there's a good chance they'll see
-the spinning loading circle and nothing else.   A SHIFT + reload button or clearing web page cache should correct this.
-* External Google logins are now saved across browser load by default.  The proper fix is a "Remember Me" checkbox being applied to 
-that setting, but that's a complicated fix with the render model on the login page.
+* Now uses the DotNet 9 Asset Management feature to simplify asset versioning.
+* There was a bug regarding logout in WASM, fixed with **WorkaroundEndpointAntiforgeryStateProvider.cs**
+* Some web servers cannot handle the 'range' header value and would return 416 instead of playing audio.  The workaround came by calling a Javascript 
+routine to load the sound file into a blob without using the range header, then pass that to the browser audio player.
 
 
 # Credits

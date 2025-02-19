@@ -4,7 +4,7 @@ using Scrabble.Core.Types;
 namespace Scrabble.Core
 {
     /// <summary>
-    /// Record where local player has placed tiles before completing trun
+    /// Record where local player has placed tiles before completing turn
     /// </summary>
     public class TileInPlay
     {

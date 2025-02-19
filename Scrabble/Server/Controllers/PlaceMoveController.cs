@@ -159,7 +159,8 @@ namespace Scrabble.Server.Controllers
                     }
                     var baseUri = $"{Request.Scheme}://{Request.Host}";  // :{Request.Host.Port ?? 80}
                     var lastMoveDescription = gameStateDto.RecentMoves[gameStateDto.RecentMoves.Count - 1];
-                    var notifyMessage = $"It's now your turn at Scrabble.  {lastMoveDescription}.  Make your move at {baseUri}/game/{gameId}\n{scores}";
+                    //var notifyMessage = $"It's now your turn at Scrabble.  {lastMoveDescription}.  Make your move at {baseUri}/game/{gameId}\n{scores}"; -> auth problems
+                    var notifyMessage = $"It's now your turn at Scrabble.  {lastMoveDescription}.  Make your move at {baseUri}\n{scores}";
                     var sendTask = emailSender.SendEmailAsync(nextPlayer.Email, "Your move at Scrabble!", notifyMessage);
                 }
 

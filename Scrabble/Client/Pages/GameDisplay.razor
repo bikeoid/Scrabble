@@ -201,14 +201,19 @@ else
 
 
 
-    public void PlaySound(string filename)
+    public async Task PlaySound(string filename)
     {
         var player = AuthCache.CachedPlayer;
         if (player.EnableSound)
         {
-            audioId = Guid.NewGuid(); // reload the player
+            // --This direct audio element play fails when the browser invokes with the range: header
+            // --and the web server fails on all with with error code 416
+            // audioId = Guid.NewGuid(); // reload the player
             soundUrl = $"/sounds/{filename}";
-            InvokeAsync(StateHasChanged);
+            // InvokeAsync(StateHasChanged);
+
+            await _jsModule.InvokeVoidAsync("playSound", soundUrl);
+
         }
     }
 
@@ -239,7 +244,7 @@ else
 
         await SetupHub();
 
-        _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./scripts/DragAndDrop.js?v3");
+        _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", @Assets["./scripts/DragAndDrop.js"]);
     }
 
 
@@ -775,14 +780,14 @@ else
                 // Invalid move was presented
                 // This case should only be possible with no local word check.
                 MessageForLocalHuman = await response.Content.ReadAsStringAsync();
-                PlaySound("Negative2.mp3");
+                await PlaySound("Negative2.mp3");
                 return;
 
             }
             else if (!response.IsSuccessStatusCode)
             {
                 MessageForLocalHuman = $"Unable to make move, code: {response.StatusCode.ToString()}";
-                PlaySound("Negative2.mp3");
+                await PlaySound("Negative2.mp3");
                 return;
             }
             var gameDto = await response.Content.ReadFromJsonAsync<GameDto>();
@@ -794,15 +799,6 @@ else
             if (currentGame.players.Count == 2 && wasRegularMove)
             {
                 MessageForLocalHuman = ""; // Suppress text detail since it's highlighted on tiles (keep cleaner display)
-            }
-
-            if (currentGame.FinalGameStatus == null)
-            {
-                PlaySound("GuitarStrum.mp3");
-            } else
-            {
-                // game over
-                PlaySound("GameOver.mp3");
             }
         }
         catch (Exception ex)
@@ -999,13 +995,13 @@ else
         {
             if (!initialLoad)
             {
-                PlaySound("GuitarTada.mp3");
+                await PlaySound("GuitarStrum.mp3");
             }
         }
         else
         {
             // game over
-            PlaySound("GameOver.mp3");
+            await PlaySound("GameOver.mp3");
         }
         initialLoad = false;
     }
@@ -1155,12 +1151,12 @@ else
                 StateHasChanged();
                 if (currentGame.FinalGameStatus == null)
                 {
-                    PlaySound("ScrabbleDrop.mp3");
+                    await PlaySound("ScrabbleDrop.mp3");
                 }
                 else
                 {
                     // game over
-                    PlaySound("GameOver.mp3");
+                    await PlaySound("GameOver.mp3");
                 }
             }
 
@@ -1168,7 +1164,7 @@ else
         });
 
         // Chat message just created
-        hubConnection.On<ChatDto>("ClientReceiveChat", (chat) =>
+        hubConnection.On<ChatDto>("ClientReceiveChat", async (chat) =>
                 {
                     Data.ChatList.Instance.Add(chat);
                     if (chatParameters != null && chatParameters.NewMessageRefresh != null)
@@ -1176,12 +1172,12 @@ else
                         // Play sound only if chat from other player
                         if (chat.PlayerId != AuthCache.CachedPlayer.PlayerId)
                         {
-                            PlaySound("ComedicWhistle.mp3");
+                            await PlaySound("ComedicWhistle.mp3");
                         }
                         chatParameters.NewMessageRefresh();
                     } else
                     {
-                        PlaySound("ComedicWhistle.mp3");
+                        await PlaySound("ComedicWhistle.mp3");
                         StateHasChanged();
                     }
                 });

@@ -9,11 +9,13 @@ using Scrabble.Server.Hubs;
 using Scrabble.Server.Data;
 using Scrabble.Server.Services;
 using Scrabble.Server.Utility;
-using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authorization;
 using Scrabble.Shared.Auth;
 using Scrabble.Shared;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
+using Scrabble.Server;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -104,6 +106,10 @@ builder.Services.AddTransient<IMyEmailSender, MyEmailSender>();
 
 builder.Services.AddSignalR();
 
+// Temp? Workaround for dotnet 9 bug - allows logout to work
+builder.Services.AddScoped<AntiforgeryStateProvider, WorkaroundEndpointAntiforgeryStateProvider>();
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -121,7 +127,7 @@ else
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles();
+app.MapStaticAssets();
 
 app.UseRouting();
 app.MapControllers();

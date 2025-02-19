@@ -96,8 +96,6 @@ namespace Scrabble.Server.Services
             mailMessage.Body = emailBody;
             mailMessage.IsBodyHtml = true;
 
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-
             await client.SendMailAsync(mailMessage);
             logger.LogInformation($"Email to {toEmailAddress}, subject {emailSubject} queued successfully!");
 
