@@ -209,10 +209,11 @@ else
             // --This direct audio element play fails when the browser invokes with the range: header
             // --and the web server fails on all with with error code 416
             // audioId = Guid.NewGuid(); // reload the player
-            soundUrl = $"/sounds/{filename}";
+            var soundPath = $"/sounds/{filename}";
+            //soundUrl = soundPath;
             // InvokeAsync(StateHasChanged);
 
-            await _jsModule.InvokeVoidAsync("playSound", soundUrl);
+            await _jsModule.InvokeVoidAsync("playSound", soundPath);
 
         }
     }
@@ -653,7 +654,7 @@ else
         foreach (var tileInPlay in WordInPlay)
         {
             testMove.Add(new(tileInPlay.BoardPosition, tileInPlay.Tile));
-            
+
         }
 
         validMove = false;
@@ -1081,6 +1082,7 @@ else
             await hubConnection.InvokeAsync("BroadcastRematchGame", GameId, newGameId);
 
             await _jsModule.InvokeVoidAsync("CleanupDragAndDrop", null);
+            initialLoad = true;
             NavigationManager.NavigateTo($"/game/{newGameId}");
 
         }
