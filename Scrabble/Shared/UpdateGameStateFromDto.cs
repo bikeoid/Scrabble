@@ -1,5 +1,6 @@
 ﻿using Scrabble.Core.Config;
 using Scrabble.Core.Types;
+using System.Diagnostics;
 
 
 namespace Scrabble.Shared

@@ -17,7 +17,7 @@ namespace Scrabble.Server.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.4")
+                .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -49,7 +49,7 @@ namespace Scrabble.Server.Migrations
 
                     b.HasIndex("PlayerId");
 
-                    b.ToTable("Chats");
+                    b.ToTable("Chats", (string)null);
                 });
 
             modelBuilder.Entity("Scrabble.Server.Data.Game", b =>
@@ -86,7 +86,7 @@ namespace Scrabble.Server.Migrations
 
                     b.HasKey("GameId");
 
-                    b.ToTable("Games");
+                    b.ToTable("Games", (string)null);
                 });
 
             modelBuilder.Entity("Scrabble.Server.Data.Player", b =>
@@ -126,7 +126,7 @@ namespace Scrabble.Server.Migrations
 
                     b.HasKey("PlayerId");
 
-                    b.ToTable("Players");
+                    b.ToTable("Players", (string)null);
                 });
 
             modelBuilder.Entity("Scrabble.Server.Data.PlayerGame", b =>
@@ -161,7 +161,7 @@ namespace Scrabble.Server.Migrations
 
                     b.HasIndex("PlayerId");
 
-                    b.ToTable("PlayerGames");
+                    b.ToTable("PlayerGames", (string)null);
                 });
 
             modelBuilder.Entity("Scrabble.Server.Data.Chat", b =>

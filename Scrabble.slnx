@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Scrabble/Client/Scrabble.Client.csproj" />
+  <Project Path="Scrabble/Core/Scrabble.Core.csproj" />
+  <Project Path="Scrabble/Server/Scrabble.Server.csproj" />
+  <Project Path="Scrabble/Shared/Scrabble.Shared.csproj" />
+  <Project Path="Scrabble/TestCore/ScrabbleTests.csproj" />
+</Solution>

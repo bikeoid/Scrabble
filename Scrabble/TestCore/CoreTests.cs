@@ -49,7 +49,7 @@ namespace ScrabbleTests
             //{
             //    coord.Print();
             //}
-            Assert.AreEqual(range.Count, 6);
+            Assert.HasCount(6, range);
             Assert.AreEqual(range[0], c0);
             Assert.AreEqual(range[5], c1);
         }
@@ -65,7 +65,7 @@ namespace ScrabbleTests
             var words = wordLookup.FindAllWords(tiles);
             watch.Stop();
 
-            Assert.AreEqual(words.Count, 52);  // This may fail as words are added to dictionary or different dictionary
+            Assert.HasCount(52, words);  // This may fail as words are added to dictionary or different dictionary
             //foreach (var word in words)
             //{
             //    Debug.WriteLine(word);
@@ -83,7 +83,7 @@ namespace ScrabbleTests
             var words = wordLookup.FindWordsUsing(tiles, 0);
             watch.Stop();
 
-            Assert.AreEqual(words.Count, 47);   // This may fail as words are added to dictionary or different dictionary
+            Assert.HasCount(47, words);   // This may fail as words are added to dictionary or different dictionary
             //foreach (var word in words)
             //{
             //    Debug.WriteLine(word);
@@ -96,7 +96,7 @@ namespace ScrabbleTests
         {
             var twoLetterWords = WordLookup.TwoLetterWords;
 
-            Assert.AreEqual(twoLetterWords.Count, 104);   // This may fail as words are added to dictionary or different dictionary
+            Assert.HasCount(104, twoLetterWords);   // This may fail as words are added to dictionary or different dictionary
         }
 
 

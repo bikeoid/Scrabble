@@ -91,11 +91,10 @@ currently not implemented.
 * Algorithm such as outlined at https://www.cs.cmu.edu/afs/cs/academic/class/15451-s06/www/lectures/scrabble.pdf
 
 
-## 2025 Upgrde to DotNet 9
+## 2026 Upgrde to DotNet 10
 
 I still play the game every day with a small group.
 
-* Now uses the DotNet 9 Asset Management feature to simplify asset versioning.
 * There was a bug regarding logout in WASM, fixed with **WorkaroundEndpointAntiforgeryStateProvider.cs**
 * Some web servers cannot handle the 'range' header value and would return 416 instead of playing audio.  The workaround came by calling a Javascript 
 routine to load the sound file into a blob without using the range header, then pass that to the browser audio player.

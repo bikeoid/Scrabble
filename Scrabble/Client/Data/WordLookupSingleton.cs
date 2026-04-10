@@ -39,9 +39,11 @@ namespace Scrabble.Client.Data
             using (var reader = new StreamReader(memoryStream))
             {
                 reader.BaseStream.Position = 0;
-                while (!reader.EndOfStream)
+                string line = "";
+                while (line != null)
                 {
-                    var line = await reader.ReadLineAsync();
+                    line = await reader.ReadLineAsync();
+                    if (line == null) break;
                     var word = line.Trim().ToUpper();
                     if (word.Length > 1 && !validWords.Contains(word))
                     {
