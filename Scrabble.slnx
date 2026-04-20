@@ -1,6 +1,8 @@
 <Solution>
   <Project Path="Scrabble/Client/Scrabble.Client.csproj" />
   <Project Path="Scrabble/Core/Scrabble.Core.csproj" />
+  <Project Path="Scrabble/FluentValidation/src/Blazored.FluentValidation/Blazored.FluentValidation.csproj" />
+  <Project Path="Scrabble/Modal/src/Blazored.Modal/Blazored.Modal.csproj" />
   <Project Path="Scrabble/Server/Scrabble.Server.csproj" />
   <Project Path="Scrabble/Shared/Scrabble.Shared.csproj" />
   <Project Path="Scrabble/TestCore/ScrabbleTests.csproj" />

@@ -1,0 +1,49 @@
+name: Build & Test PR
+
+on:
+  pull_request:
+    branches: [ main ]
+
+env:
+    PROJECT_NAME: Blazored.Modal
+    NETCORE_VERSION: '8.0.x'
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setting up .NET Core SDK ${{ env.NETCORE_VERSION }}...
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ env.NETCORE_VERSION }}
+
+    - name: Restoring packages...
+      run: dotnet restore
+
+    - name: Building project...
+      run: dotnet build --configuration Release --no-restore src/$PROJECT_NAME/$PROJECT_NAME.csproj
+
+    - name: Testing...
+      run: dotnet test --no-restore --verbosity normal
+  
+  docs-test-deploy:
+    name: Docs test deployment
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./docs
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: './docs/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+      - name: Test build website
+        run: npm run build

@@ -1,0 +1,81 @@
+﻿@page "/"
+
+<h1>Blazored FluentValidation Sample</h1>
+
+<hr class="mb-5" />
+
+<EditForm Model="@_person" OnValidSubmit="@SubmitValidForm">
+    <FluentValidationValidator @ref="_fluentValidationValidator" DisableAssemblyScanning="@true"/>
+    <ValidationSummary/>
+
+    <p>
+        <label>First Name: </label>
+        <InputText @bind-Value="@_person.FirstName" />
+        <ValidationMessage For="@(() => _person.FirstName)" />
+    </p>
+
+    <p>
+        <label>Last Name: </label>
+        <InputText @bind-Value="@_person.LastName" />
+        <ValidationMessage For="@(() => _person.LastName)" />
+    </p>
+
+    <hr />
+
+    <p>
+        <label>Age: </label>
+        <InputNumber @bind-Value="@_person.Age" />
+        <ValidationMessage For="@(() => _person.Age)" />
+    </p>
+
+    <p>
+        <label>Email Address: </label>
+        <InputText @bind-Value="@_person.EmailAddress" />
+        <ValidationMessage For="@(() => _person.EmailAddress)" />
+    </p>
+
+    <p>
+        <label>Address: Line 1: </label>
+        <InputText @bind-Value="@_person.Address.Line1" />
+        <ValidationMessage For="@(() => _person.Address.Line1)" />
+    </p>
+
+    <p>
+        <label>Address: Line 2: </label>
+        <InputText @bind-Value="@_person.Address.Line2" />
+    </p>
+
+    <p>
+        <label>Address: Town: </label>
+        <InputText @bind-Value="@_person.Address.Town" />
+        <ValidationMessage For="@(() => _person.Address.Town)" />
+    </p>
+
+    <p>
+        <label>Address: County: </label>
+        <InputText @bind-Value="@_person.Address.County" />
+        <ValidationMessage For="@(() => _person.Address.County)" />
+    </p>
+
+    <p>
+        <label>Address: Postcode: </label>
+        <InputText @bind-Value="@_person.Address.Postcode" />
+        <ValidationMessage For="@(() => _person.Address.Postcode)" />
+    </p>
+
+    <button type="submit">Save</button>
+
+</EditForm>
+<br />
+<button @onclick="PartialValidate">Partial Validation</button>
+
+@code {
+    private readonly Person _person = new();
+    private FluentValidationValidator? _fluentValidationValidator;
+
+    private void SubmitValidForm() 
+        => Console.WriteLine("Form Submitted Successfully!");
+
+    private void PartialValidate() 
+        => Console.WriteLine($"Partial validation result : {_fluentValidationValidator?.Validate(options => options.IncludeRuleSets("Names"))}");
+}
