@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
 using System;
 
-namespace Scrabble.Server.Data.Migrations
+namespace Scrabble.Server.Migrations
 {
     public partial class CreateIdentitySchema : Migration
     {

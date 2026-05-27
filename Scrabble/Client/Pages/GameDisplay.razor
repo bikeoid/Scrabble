@@ -12,6 +12,8 @@
 @using System.Runtime.InteropServices.JavaScript
 @using Scrabble.Shared
 @using Scrabble.Client.Data
+@using Newtonsoft.Json;
+@using System.Diagnostics;
 
 @attribute [Authorize(Policy = Policies.IsPlayer)]
 
@@ -82,6 +84,35 @@ else
         <div>&nbsp;</div>
         <div class="game-element-container">
             <div class="player-tiles">
+                @if (!MyMove && currentMoveGameDto != null)
+                {
+                    <button class="professor-owl" @onclick=ShowProfessorAdvisor>
+
+                    </button>
+                }
+                @if (showProfessorDialog)
+                {
+                    <div class="professor-dialog">
+                        <table>
+                            <tr>
+                                <td rowspan="2">
+                                    <img src="/images/ProfessorOwl2.png" class="professor-icon" />
+                                </td>
+                                <td class="text-center">
+                                    @professorMessage <br />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+
+                                </td>
+                                <td class="text-center">
+                                    <button @onclick=ProfessorDialogOk>OK</button>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                }
                 <button @onclick=Shuffle disabled="@DisabledShuffle()">Shuffle</button>
                 @for (int i = 0; i < TilesInRack.Count; i++)
                 {
@@ -128,6 +159,7 @@ else
                 else
                 {
                     <button @onclick=Rematch disabled="@IsSubmitting">Rematch</button>
+
                 }
 
                 <button class="@ChatAlert()" @onclick=ShowChat>Chat</button>
@@ -174,12 +206,14 @@ else
     private List<String> LeftPlayerScores { get; set; }
     private List<String> RightPlayerScores { get; set; }
 
+    private GameDto currentMoveGameDto = null; // For advisory move: State at start of move
+    private bool professorMoveValid = false;
+    private bool showProfessorDialog = false;
+    private string professorMessage = "";
+
     int highestChatSeen = 0;
 
     private List<Tile> SwappingTiles = new List<Tile>();
-
-    //const string WordFile = "SOWPODS.txt"; // Full, euro dictionary
-    const string WordFile = "TWL06a.txt?v4"; // North America with 181 2022 Scrabble words added dictionary  - ?v(n) added to ensure it's uncached
 
     private bool Disabled(bool buttonDisabled = false) => buttonDisabled || IsSubmitting || !MyMove;
     private bool DisabledShuffle(bool buttonDisabled = false) => buttonDisabled || IsSubmitting || (currentGame.FinalGameStatus != null);
@@ -284,23 +318,9 @@ else
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    private async Task CheckDictionary()
-    {
-        var player = AuthCache.CachedPlayer;
-        if (player != null)
-        {
-            if (player.WordCheck)
-            {
-                // Lengthy; can't multithread in browser yet
-                await Data.WordLookupSingleton.InitializeWordListInstance(Http, WordFile);
-            }
-        }
-    }
 
     private async Task LoadGameAsync()
     {
-        await CheckDictionary();
-
         try
         {
             await BuildGame();
@@ -327,6 +347,14 @@ else
 
             newGame = new GameState(new List<Player>(), Data.WordLookupSingleton.Instance);
             await ApplyDownloadToGui(newGame, gameDto);
+            if (MyMove)
+            {
+                currentMoveGameDto = CloneGameDto(gameDto);
+            } else
+            {
+                currentMoveGameDto = null;
+            }
+            professorMoveValid = false;
         }
         else
         {
@@ -801,6 +829,7 @@ else
             {
                 MessageForLocalHuman = ""; // Suppress text detail since it's highlighted on tiles (keep cleaner display)
             }
+
         }
         catch (Exception ex)
         {
@@ -815,6 +844,114 @@ else
 
         Console.WriteLine($"Played {nPlayed}, have {TilesInRack.Count} tiles");
     }
+
+    private GameDto CloneGameDto(GameDto original)
+    {
+        string json = JsonConvert.SerializeObject(original, new JsonSerializerSettings
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore // Handle circular references
+        });
+        return JsonConvert.DeserializeObject<GameDto>(json);
+    }
+
+    private async Task ShowProfessorAdvisor()
+    {
+        var saveGameStateDto = new GameStateDto(currentGame);
+
+        professorMessage = "Thinking ...";
+        showProfessorDialog = true;
+        if (!professorMoveValid)
+        {
+            StateHasChanged();
+            await Task.Delay(TimeSpan.FromMilliseconds(100));  // Update UI
+
+            //Stopwatch stopwatch = Stopwatch.StartNew();
+            var moveSuggestion = new ComputerMoveSuggestion();
+            await moveSuggestion.MakeComputerMoveAsync(currentMoveGameDto, myEmail);
+            //stopwatch.Stop();
+            //Console.WriteLine($"\nTime taken for move: {stopwatch.ElapsedMilliseconds} ms");
+        }
+        professorMoveValid = true;
+
+        var humanPlayer = FindSelf(currentGame);
+        var humanScore = humanPlayer.LastMoveScore;
+
+        var displayComputerBoard = false;
+        professorMessage = GetProfessorMessage(humanScore, currentMoveGameDto.GameState_Dto.CurrentMoveScore, ref displayComputerBoard);
+
+        if (displayComputerBoard)
+        {
+            initialLoad = true;
+            await ApplyDownloadToGui(currentGame, currentMoveGameDto);
+        }
+
+        StateHasChanged();
+        while (showProfessorDialog)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(200));
+        }
+
+        if (displayComputerBoard)
+        {
+            var restoreGameDto = new GameDto();
+            restoreGameDto.GameId = GameId;
+            restoreGameDto.GameState_Dto = saveGameStateDto;
+            restoreGameDto.HighestChatSeen = highestChatSeen;
+            restoreGameDto.Chat_Dto = new List<ChatDto>();  // Empty for update - will be overwritten
+
+            initialLoad = true;
+            await ApplyDownloadToGui(currentGame, restoreGameDto);
+
+        }
+        showProfessorDialog = false;
+        StateHasChanged();
+    }
+
+    private async Task ProfessorDialogOk()
+    {
+        showProfessorDialog = false;  // Also exit wait loop in ShowProfessorAdvisor()
+    }
+
+    private string GetProfessorMessage(int playerScore, int computerScore, ref bool displayComputerPlay)
+    {
+        displayComputerPlay = false;
+        Random rnd = new Random();
+
+        if (playerScore == computerScore)
+        {
+            var adjectives = new List<string> {"Splendid", "Impressive", "Superb", "Excellent" };
+            int randIndex = rnd.Next(adjectives.Count);
+            string superlative = adjectives[randIndex];
+
+            return $"{superlative}!  I couldn't have done better myself!";
+        }
+
+        displayComputerPlay = true;
+        if (playerScore > computerScore)
+        {
+            var adjectives = new List<string> { "Dazzling", "Brilliant", "Magnificent", "Marvelous" };
+            int randIndex = rnd.Next(adjectives.Count);
+            string superlative = adjectives[randIndex];
+
+            return $"{superlative}!  You did even better than I could have!";
+        }
+
+        var advice = "Not bad!";
+        var scoreDiff = computerScore - playerScore;
+        if (scoreDiff < 5)
+        {
+            advice = "Not bad!";
+        } else if (scoreDiff < 10)
+        {
+            advice = "Ok -";
+        } else
+        {
+            advice = "";
+        }
+
+        return $"{advice} What about this though?";
+    }
+
 
     /// <summary>
     /// Search list of players in current game for self, based on Email

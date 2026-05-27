@@ -70,6 +70,7 @@ namespace Scrabble.Shared
                 this.Email = activePlayer.Email;
                 this.PlayerId = activePlayer.PlayerId;
                 this.Score = activePlayer.Score;
+                this.LastMoveScore = activePlayer.LastMoveScore;
                 this.Tiles = activePlayer.Tiles;
                 this.MyTurn= activePlayer.MyTurn;
                 this.PlayerPasses = activePlayer.PlayerPasses;
@@ -84,7 +85,7 @@ namespace Scrabble.Shared
             public int PlayerId { get; set; }
 
             public int Score { get; set; }
-
+            public int LastMoveScore { get; set; }
             public List<Tile> Tiles { get; set; }
             public bool MyTurn { get; set; }
             public int PlayerPasses { get; set; }

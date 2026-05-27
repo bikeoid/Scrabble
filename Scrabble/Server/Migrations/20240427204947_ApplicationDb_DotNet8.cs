@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Scrabble.Server.Data.Migrations
+namespace Scrabble.Server.Migrations
 {
     /// <inheritdoc />
     public partial class ApplicationDb_DotNet8 : Migration

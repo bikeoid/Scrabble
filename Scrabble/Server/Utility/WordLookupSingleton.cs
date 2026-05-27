@@ -1,4 +1,5 @@
 ﻿using Scrabble.Core;
+using Scrabble.Core.AI;
 using Scrabble.Core.Types;
 using System.IO;
 using System.Linq;
@@ -10,9 +11,9 @@ namespace Scrabble.Server.Utility
     {
         private const bool LocalComputerPlayer = true; // Computer opponent on server
 
-        public static WordLookup instance;
+        public static ComputerPlayerAI instance;
 
-        public static WordLookup Instance
+        public static ComputerPlayerAI Instance
         {
             get
             {
@@ -20,24 +21,11 @@ namespace Scrabble.Server.Utility
             }
         }
 
-        internal static void InitializeWordList(string filePath)
+        internal static void InitializeWordList(ComputerPlayerAI computerPlayerAI)
         {
-            var validWords = new HashSet<string>();
-            using (var inFile = new StreamReader(filePath))
-            {
-                while (!inFile.EndOfStream)
-                {
-                    var line = inFile.ReadLine();
-                    var word = line.Trim().ToUpper();
-                    if (word.Length > 1 && !validWords.Contains(word))
-                    {
-                        // Ensure list of usable distinct words
-                        validWords.Add(word);
-                    }
-                }
-            }
+            computerPlayerAI.InitialiseAsync().Wait();  // Ingest dictionary
 
-            instance = new WordLookup(validWords, LocalComputerPlayer);
+            instance = computerPlayerAI;
         }
     }
 }

@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Scrabble.Client;
-using Scrabble.Shared.Auth;
+using Scrabble.Client.Data;
+using Scrabble.Core.AI;
 using Scrabble.Shared;
+using Scrabble.Shared.Auth;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -30,14 +32,17 @@ builder.Services.AddApiAuthorization();
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddSingleton<AuthenticationStateProvider, PersistentAuthenticationStateProvider>();
+builder.Services.AddSingleton<Scrabble.Core.AI.ComputerPlayerAI>();
 
 
 //await builder.Build().RunAsync();
 var host = builder.Build();
 
-var client = host.Services.GetRequiredService<HttpClient>();
+var httpClient = host.Services.GetRequiredService<HttpClient>();
 
-AuthCache.AuthHttpClient = client;
+await WordLookupSingleton.InitializeWordListInstance(httpClient, host.Services.GetRequiredService<ComputerPlayerAI>(), "TWL06a.txt?v=4");
+
+AuthCache.AuthHttpClient = httpClient;
 
 await host.RunAsync();
 

@@ -1,5 +1,6 @@
 ﻿
 using Scrabble.Core;
+using Scrabble.Core.AI;
 using Scrabble.Core.Types;
 using System.IO;
 using System.Linq;
@@ -15,9 +16,9 @@ namespace Scrabble.Client.Data
     {
         private const bool LocalComputerPlayer = false; // Server hosts computer player logic
 
-        private static WordLookup instance;
+        private static ComputerPlayerAI instance;
 
-        public static WordLookup Instance
+        public static ComputerPlayerAI Instance
         {
             get
             {
@@ -25,35 +26,18 @@ namespace Scrabble.Client.Data
             }
         }
 
-        public static async Task InitializeWordListInstance(HttpClient httpClient, string fileName)
+        public static async Task InitializeWordListInstance(HttpClient httpClient, ComputerPlayerAI computerPlayerAI, string fileName)
         {
             if (instance != null) return; // Already initialized
 
-            HttpResponseMessage response = await httpClient.GetAsync(fileName);
+            HttpResponseMessage response = await httpClient.GetAsync("TWL06a.txt?v=4");
             MemoryStream memoryStream = new MemoryStream();
             Stream httpStream = await response.Content.ReadAsStreamAsync();
             httpStream.Position = 0;
             httpStream.CopyTo(memoryStream);
+            await computerPlayerAI.InitialiseAsync(memoryStream);  // Ingest dictionary
 
-            var validWords = new HashSet<string>();
-            using (var reader = new StreamReader(memoryStream))
-            {
-                reader.BaseStream.Position = 0;
-                string line = "";
-                while (line != null)
-                {
-                    line = await reader.ReadLineAsync();
-                    if (line == null) break;
-                    var word = line.Trim().ToUpper();
-                    if (word.Length > 1 && !validWords.Contains(word))
-                    {
-                        // Ensure list of usable distinct words
-                        validWords.Add(word);
-                    }
-                }
-            }
-
-            instance = new WordLookup(validWords, LocalComputerPlayer);
+            instance = computerPlayerAI;
         }
     }
 }

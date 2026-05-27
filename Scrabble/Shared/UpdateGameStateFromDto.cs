@@ -45,6 +45,7 @@ namespace Scrabble.Shared
                 // No need to set computer algorithm since not used locally
             }
             activePlayer.Score = sourcePlayer.Score;
+            activePlayer.LastMoveScore = sourcePlayer.LastMoveScore;
             activePlayer.Tiles =sourcePlayer.Tiles;
             activePlayer.MyTurn = sourcePlayer.MyTurn;
             activePlayer.PlayerPasses = sourcePlayer.PlayerPasses;

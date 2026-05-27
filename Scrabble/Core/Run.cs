@@ -1,4 +1,6 @@
-﻿using Scrabble.Core.Config;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Scrabble.Core.AI;
+using Scrabble.Core.Config;
 using Scrabble.Core.Squares;
 using System;
 using System.Collections.Generic;
@@ -62,7 +64,8 @@ namespace Scrabble.Core.Types
         public bool IsValid(bool withException)
         {
             var word = this.ToWord();
-            if (game.Dictionary.IsValidWord(word)) return true;
+            var isValid = game.Dictionary.IsValidWordAsync(word).Result;
+            if (isValid) return true;
             if (withException)
             {
                 throw new InvalidMoveException($"Invalid word: {word}");

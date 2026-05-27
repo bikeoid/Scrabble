@@ -1,5 +1,6 @@
 ﻿@page "/AdminPlayers"
 
+@using Blazilla
 @using Scrabble.Shared
 @using System.Text.Json
 
@@ -23,7 +24,7 @@
             <div class="text-danger">
                 @customValidationError
             </div>
-            <FluentValidationValidator />
+            <FluentValidator />
 
             <table>
                 <tr>

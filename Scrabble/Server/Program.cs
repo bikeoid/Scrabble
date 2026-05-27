@@ -2,7 +2,8 @@ using Blazored.Modal;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-//using Scrabble.Client.Pages;
+using Scrabble.Core.AI;
+using Scrabble.Server;
 using Scrabble.Server.Components;
 using Scrabble.Server.Components.Account;
 using Scrabble.Server.Hubs;
@@ -15,7 +16,6 @@ using Scrabble.Shared;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Scrabble.Server;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -99,16 +99,18 @@ builder.Services.AddScoped(http => new HttpClient
 });
 #endif
 
-//builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection("AuthMessageSenderOptions"));
-builder.Services.AddSingleton<IEmailSender<ApplicationUser>, EmailSender>();
+// Enable next 2 lines to use real email sender. Remember to set up the AuthMessageSenderOptions in appsettings.json and provide an implementation of IEmailSender<ApplicationUser>.
+//builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection("AuthMessageSenderOptions"));
+//builder.Services.AddSingleton<IEmailSender<ApplicationUser>, EmailSender>();
+
+// Remove the next line to stop using the no-op email sender (which does nothing and is only for testing / development).
+builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+
 builder.Services.AddTransient<IMyEmailSender, MyEmailSender>();
 
 builder.Services.AddSignalR();
 
-// Temp? Workaround for dotnet 9 bug - allows logout to work
-builder.Services.AddScoped<AntiforgeryStateProvider, WorkaroundEndpointAntiforgeryStateProvider>();
-
+builder.Services.AddSingleton<Scrabble.Core.AI.ComputerPlayerAI>();
 
 var app = builder.Build();
 
@@ -147,7 +149,7 @@ app.MapAdditionalIdentityEndpoints();
 
 string rootpath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot");
 string filePath = System.IO.Path.Combine(rootpath, "TWL06a.txt");
-WordLookupSingleton.InitializeWordList(filePath);
+WordLookupSingleton.InitializeWordList(app.Services.GetRequiredService<ComputerPlayerAI>());
 
 var scope = app.Services.CreateScope();
 var client = scope.ServiceProvider.GetRequiredService<HttpClient>();

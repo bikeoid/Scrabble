@@ -9,7 +9,7 @@ using Scrabble.Server.Data;
 
 #nullable disable
 
-namespace Scrabble.Server.Data.Migrations
+namespace Scrabble.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20240427204947_ApplicationDb_DotNet8")]

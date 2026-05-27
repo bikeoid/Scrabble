@@ -1,11 +1,13 @@
-﻿using Scrabble.Core.Config;
+﻿using Microsoft.Extensions.Logging;
 using Scrabble.Core;
+using Scrabble.Core.AI;
+using Scrabble.Core.Config;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Data.SqlTypes;
+using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Security.AccessControl;
 
 namespace Scrabble.Core.Types
@@ -28,7 +30,7 @@ namespace Scrabble.Core.Types
 
         public GameState() { }  // Deserialization support
 
-        public GameState(List<Player> players, WordLookup wordLookup)
+        public GameState(List<Player> players, ComputerPlayerAI computerPlayerAi)
         {
             GameState gameState = this;
             this.players = players;
@@ -39,7 +41,7 @@ namespace Scrabble.Core.Types
             Random random = new Random();
             this.currentPlayerIndex = 0;
             this.passCount = 0;
-            this.Dictionary = wordLookup;
+            this.Dictionary = computerPlayerAi;
             this.currentMoveScore = 0;
         }
 
@@ -67,7 +69,7 @@ namespace Scrabble.Core.Types
 
         public IEnumerable<ComputerPlayer> ComputerPlayers => this.Players.OfType<ComputerPlayer>();
 
-        public WordLookup Dictionary { get; set; }
+        public ComputerPlayerAI Dictionary { get; set; }
 
         public Player CurrentPlayer { get { return this.players[this.currentPlayerIndex]; } }
 
@@ -176,6 +178,8 @@ namespace Scrabble.Core.Types
             }
             return false;
         }
+
+
 
 
         void ITurnImplementor.PerformPass()

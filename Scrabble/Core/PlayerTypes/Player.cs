@@ -13,6 +13,7 @@ namespace Scrabble.Core.Types
         public int PlayerId { get; set; }
 
         public int Score { get; set; }
+        public int LastMoveScore { get; set; }
 
         public List<Tile> Tiles { get; set; }
         public bool MyTurn { get; set; }
@@ -43,6 +44,7 @@ namespace Scrabble.Core.Types
 
         public void AddScore(int s)
         {
+            LastMoveScore = s;
             Score += s;
         }
 

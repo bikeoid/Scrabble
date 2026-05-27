@@ -2,8 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Scrabble.Core;
+using Scrabble.Core.AI;
 using Scrabble.Core.Types;
 using Scrabble.Server.Data;
+using Scrabble.Server.Utility;
 using Scrabble.Shared;
 
 namespace Scrabble.Server.Controllers
@@ -24,7 +26,7 @@ namespace Scrabble.Server.Controllers
         [HttpGet()]
         public ActionResult<List<string>> Get()
         {
-            return Ok(WordLookup.TwoLetterWords);
+            return Ok(WordLookupSingleton.instance.TwoLetterWords);
         }
 
     }

@@ -7,10 +7,15 @@ A Blazor implementation of the classic word game with features:
  * Full implementation of the traditional board game following all the rules when possible.  A departure from tradition is that the opening
  tile draw only happens with player VS computer.  The player who creates a new game makes the opening move.
  * Immediate feedback when placing tiles for a move to confirm valid word(s) and valid placement
+ * A 'professor' icon is shown after player's move unless playing directly against the computer.  This is an
+option to request the computer make a move to compare against the player's board and rack.   This can often
+point out new words or ways to improve scores.
+
+![Professor Owl](./Scrabble/Client/wwwroot/images/ProfessorOwl2.png ) 
 
 ## Getting started
-The application was developed using Visual Studio 2022 with .NET 9 and Blazor.  Before it can be run, the databases must be
-created by running this command in the "Package Manager Console" (Select ScrabbleServer as the Default Project):
+The application was developed using Visual Studio 2026 with .NET 10 and Blazor.  Before it can be run, the databases must be
+created by running this command in the "Package Manager Console" (Select Scrabble.Server as the Default Project):
 ``` 
 Update-Database -Context "ApplicationDbContext"
 Update-Database -Context "ScrabbleDbContext" 
@@ -29,7 +34,7 @@ The application is configured to use mssqllocaldb but could be redirected to oth
  * Double click a tile in play on board to send it back to the rack.
 
  ## Player settings
- ![Scrabble Board](./Docs/PlayerSettings.JPG )   
+ ![Player Settings](./Docs/PlayerSettings.JPG )   
  * Sound can be turned off to avoid disturbing those nearby
  * Check word: loads the entire word list dictionary to use for word validation and scoring.  Adds 5-10 seconds to game load time 
  and takes more memory in the browser.
@@ -86,16 +91,14 @@ An alternative European English dictionary is SOWPODS.txt from https://www.wordg
 * Offline play against computer.   Although the game definition and dictionary can reside locally, this is 
 currently not implemented.
 * Offline play of active game(s) which will post the move(s) when reconnected.
-* Optimized computer algorithms with multiple difficulty levels.
+* Optimized computer algorithms with multiple difficulty levels.  Currently implements only Appel-Jacobson DAWG algorithm.
 * Player performance tallies.  (Currently completed games are purged after 30 days)
-* Algorithm such as outlined at https://www.cs.cmu.edu/afs/cs/academic/class/15451-s06/www/lectures/scrabble.pdf
 
 
 ## 2026 Upgrde to DotNet 10
 
 I still play the game every day with a small group.
 
-* There was a bug regarding logout in WASM, fixed with **WorkaroundEndpointAntiforgeryStateProvider.cs**
 * Some web servers cannot handle the 'range' header value and would return 416 instead of playing audio.  The workaround came by calling a Javascript 
 routine to load the sound file into a blob without using the range header, then pass that to the browser audio player.
 
@@ -112,7 +115,7 @@ routine to load the sound file into a blob without using the range header, then 
 
 ## Other
 * Tile Bag designed by Bart Michaels at https://github.com/bartmichels/scrabble
+* Professor image derived from https://publicdomainvectors.org/en/free-clipart/Owl-instructor/81112.html
 * Scrabble in Blazor for inspiration and some ideas https://github.com/ddashwood/Scrabble
-* Sharpscrabble https://code.google.com/archive/p/sharpscrabble/  <- For writeup of the word dictionary.
-	* Sharpscrabble SVN code imported to https://github.com/vbasarkar/sharpscrabble
+* Sharpscrabble SVN code imported to https://github.com/vbasarkar/sharpscrabble
 

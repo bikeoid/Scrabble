@@ -28,6 +28,10 @@ a.game-link:hover {
     }
 
 
+text-center {
+    text-align: center;
+}
+
 .overlay {
     position: fixed;
     top: 0;
@@ -128,6 +132,36 @@ textarea {
     border: .4vw solid darkred;
     padding: .4vw;
 }
+
+.professor-owl {
+    background-image: url("/Images/ProfessorOwl2.png");
+    background-size: 100% 100%;
+    width: var(--tile-rack-size, 5vw);
+    height: var(--tile-rack-size, 5vw);
+    color: white;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    margin-right: 10px;
+}
+
+.professor-icon {
+    width: var(--tile-rack-size, 5vw);
+    height: var(--tile-rack-size, 5vw);
+}
+
+.professor-dialog {
+    position: absolute;
+    /*left: 0; */
+    top: 0;
+    height: var(--tile-rack-size, 5vw);
+    width: 50vw;
+    margin-left: calc(-30vw + 50%);
+    z-index: 1000;
+    background-color: lightgray;
+    color: black;
+}
+
 
 .tile-bag-area {
     display: inline-flex;

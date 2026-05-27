@@ -1,4 +1,5 @@
 ﻿using Scrabble.Core;
+using Scrabble.Core.AI;
 using Scrabble.Core.Config;
 using Scrabble.Core.Types;
 using System;
@@ -16,7 +17,7 @@ namespace Scrabble.Core
         /// Debug quick human VS computer setup
         /// </summary>
         /// <param name="wordLookup"></param>
-        public static void SetupGameState(WordLookup wordLookup)
+        public static void SetupGameState(ComputerPlayerAI wordLookup)
         {
             var players = new List<Player>();
             players.Add(new ComputerPlayer("Computer", -1, ""));
@@ -31,8 +32,8 @@ namespace Scrabble.Core
 
             foreach (var computerPlayer in gameState.ComputerPlayers)
             {
-                computerPlayer.provider = new HillClimbingAI.HillClimbingMoveGenerator(gameState.Dictionary, 4);
-                computerPlayer.UtilityFunction = UtilityFunctions.MaximumScore;
+                computerPlayer.provider = null;
+                computerPlayer.UtilityFunction = null;
             }
 
 
