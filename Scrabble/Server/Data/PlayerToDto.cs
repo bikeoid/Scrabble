@@ -15,7 +15,11 @@ namespace Scrabble.Server.Data
             playerDto.EnableSound = player.EnableSound;
             playerDto.WordCheck = player.WordCheck;
             playerDto.NotifyNewMoveByEmail = player.NotifyNewMoveByEmail;
-
+            playerDto.IsComputerPlayer = false;
+            if (player.Name == "Computer")
+            {
+                playerDto.IsComputerPlayer = true;
+            }
 
             return playerDto;
         }

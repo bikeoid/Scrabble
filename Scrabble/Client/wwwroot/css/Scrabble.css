@@ -236,7 +236,7 @@ textarea {
 }
 
 .double-letter {
-    background-color: lightcyan;
+    background-color: lightblue;
     /*FF9696FF*/
     position: absolute;
     display: inline-grid;
@@ -257,7 +257,7 @@ textarea {
 
 
 .triple-letter {
-    background-color: skyblue;
+    background-color: royalblue;
     /* color: white; */
     position: absolute;
     display: inline-grid;
@@ -429,6 +429,7 @@ textarea {
         background-color: #e8dcbf;
     }
 
+
 /*for player tile row */
 .player-tiles {
     display: flex;
@@ -509,4 +510,8 @@ textarea {
 
 .bi-plus-lg {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' class='bi bi-plus-lg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2'/%3E%3C/svg%3E");
+}
+
+.computerlevel-indent {
+    margin-left: 1.1em; font-style: italic
 }

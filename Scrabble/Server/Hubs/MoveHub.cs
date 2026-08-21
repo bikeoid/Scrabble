@@ -260,8 +260,9 @@ namespace Scrabble.Server.Hubs
             {
                 return;
             }
-
-            Console.WriteLine($"Hub: Game login by {connectingPlayer.PlayerId} - {gameId}, {Context.ConnectionId}");
+            //Console.WriteLine($"Hub: {connectingPlayer.Name}")
+            Console.WriteLine($"Hub: Game {gameId} login by player {connectingPlayer.PlayerId} ({connectingPlayer.Name}) on connection {Context.ConnectionId}");
+            Console.Out.Flush();
             var newGameConnectInfo = new GameConnectionInfo(Context.ConnectionId, gameId);
             lock (lockObject)
             {

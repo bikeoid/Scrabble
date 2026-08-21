@@ -19,6 +19,7 @@ namespace Scrabble.Core.Types
     [Serializable]
     public class ComputerPlayer : Player
     {
+     
         internal IDispWindow window;
 
 
@@ -28,6 +29,7 @@ namespace Scrabble.Core.Types
 
         internal Func<GameState, List<Tile>, List<(Coordinate coord, Tile tile)>, double> utility;
 
+     
         public IIntelligenceProvider Provider
         {
             get
@@ -67,6 +69,14 @@ namespace Scrabble.Core.Types
         public ComputerPlayer(string name, int databaseId, string email)
             : base(name, databaseId, email)
         {
+            Skill = (int)SkillLevel.Expert;
+            PlayerPasses = 0;
+        }
+
+        public ComputerPlayer(string name, int databaseId, string email, int skill)
+            : base(name, databaseId, email)
+        {
+            Skill = skill;
             PlayerPasses = 0;
         }
 
@@ -93,7 +103,8 @@ namespace Scrabble.Core.Types
 
         public void InvokeTurn(ITurnImplementor implementor)
         {
-            var skill = SkillLevel.Expert;
+            var skill = (Scrabble.Core.AI.SkillLevel)Skill;
+            Console.WriteLine($"The {Name} is thinking with skill level '{skill}'...");
 
             var boardLetters = new char[15, 15];
             var boardBlanks = new bool[15, 15];

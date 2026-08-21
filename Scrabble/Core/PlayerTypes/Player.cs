@@ -20,6 +20,7 @@ namespace Scrabble.Core.Types
 
         public string Email { get; set; }
         public int PlayerPasses { get; set; }
+        public int Skill { get; set; }
 
         public bool HasTiles => Tiles.Count > 0;
 
@@ -38,6 +39,7 @@ namespace Scrabble.Core.Types
             this.Name = name;
             this.PlayerId= databaseID;
             this.Email = email;
+            this.Skill = -1;
             Tiles = new List<Tile>();
             Score = 0;
         }

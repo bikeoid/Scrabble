@@ -15,6 +15,7 @@ public class PlayerDto
     public string Name { get; set; }
     public bool IsAdmin { get; set; }
     public bool IsPlayer { get; set; }
+    public bool IsComputerPlayer { get; set; }
     public bool EnableSound { get; set; }
     public bool WordCheck { get; set; }
     public bool NotifyNewMoveByEmail { get; set; }

@@ -26,10 +26,28 @@
                         @playerInfo.Player.Name
                     </div>
                 }
+                @if (playerInfo.Player.IsComputerPlayer)
+                {
+                    <fieldset>
+                        <InputRadioGroup @bind-Value=@proficiency.Level>
+                            @foreach (var skilllevel in Enum.GetValues<Level>())
+                            {
+                                var disabled_flag = !@playerInfo.Selected;
+                                <div class="computerlevel-indent">
+                                    <InputRadio Value=skilllevel disabled=@disabled_flag/> @skilllevel
+                                </div>
+                            }
+                        </InputRadioGroup>
+                    </fieldset>
+                }
             }
         }
-
     </div>
+
+    <div class="row">
+        <p></p>
+    </div>
+
     <div class="row">
         <p>
             <button @onclick="Submit" class="btn btn-success" disabled=@ButtonDisabled>Start Game</button>
@@ -107,9 +125,11 @@
             if (player.Selected) playerIdList.Add(player.Player.PlayerId);
         }
 
+        Console.WriteLine($"Starting new game with {playerIdList.Count} players, skill level {(int)proficiency.Level}");
         try
         {
-            var response = await Http.PostAsJsonAsync<List<int>>($"/api/NewGame", playerIdList);
+            var uri = $"/api/NewGame?skill={(int)proficiency.Level}";
+            var response = await Http.PostAsJsonAsync<List<int>>(uri, playerIdList);
             if (!response.IsSuccessStatusCode)
             {
                 HideAlert = false;
@@ -128,13 +148,24 @@
 
     }
 
-
-
-    
-
     private class SelectedPlayer
     {
         public PlayerDto Player{ get; set; }
         public bool Selected{ get; set; }  // For UI selection process
     }
+
+    public class Proficiency
+    {
+        public Level Level { get; set; } = Level.Intermediate; // Default selection
+    }
+
+    public enum Level
+    {
+        Beginner,
+        Intermediate,
+        Advanced,
+        Expert
+    }
+
+    private Proficiency proficiency = new Proficiency();
 }
