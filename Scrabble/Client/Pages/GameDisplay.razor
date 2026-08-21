@@ -1082,7 +1082,13 @@ else
     // Passed to the GameViewModel, which uses it to prompt user for a letter for a blank tile
     private async Task<char> GetBlankTileLetter()
     {
-        var result = await Modal.Show<BlankLetterSelector>("Select a Letter").Result;
+        var options = new ModalOptions
+        {
+            Size = ModalSize.Custom,
+            SizeCustomClass = "blank-letter-modal-size"
+        };
+
+        var result = await Modal.Show<BlankLetterSelector>("Select a Letter", options).Result;
         if (result.Cancelled)
         {
             return '#';

@@ -400,22 +400,26 @@ textarea {
     background-color: lightgrey;
 }
 
+.blank-letter-modal-size {
+    width: 30vw;
+    height: 25vw;
+    max-width: 90%;
+}
 
 .blank-letter-selector-grid {
     display: grid;
-    grid-template-columns: repeat(8, 40px); /* 8 tiles per row */
-    grid-gap: 6px;
+    grid-template-columns: repeat(8, 2.9vw); /* 8 tiles per row */
+    grid-gap: 0.1vw;
     justify-content: start; /* last row left-justified */
 }
 
 .blank-letter-selector-tile {
-    width: 40px;
-    height: 40px;
+    width: 2.8vw;
+    height: 2.8vw;
     background-image: url("/Images/woodknots.jpg");
     background-size: 100% 100%;
     text-align: center;
-    line-height: 40px;
-    font-size: 20px;
+    font-size: 1.8vw;
     font-weight: bold;
     cursor: pointer;
     user-select: none;
