@@ -401,6 +401,29 @@ textarea {
 }
 
 
+.blank-letter-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 40px); /* 8 tiles per row */
+    grid-gap: 6px;
+    justify-content: start; /* last row left-justified */
+}
+
+.blank-letter-selector-tile {
+    width: 40px;
+    height: 40px;
+    background-image: url("/Images/woodknots.jpg");
+    background-size: 100% 100%;
+    text-align: center;
+    line-height: 40px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+}
+
+    .blank-letter-selector-tile:hover {
+        background-color: #e8dcbf;
+    }
 
 /*for player tile row */
 .player-tiles {

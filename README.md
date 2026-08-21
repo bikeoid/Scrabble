@@ -95,7 +95,7 @@ currently not implemented.
 * Player performance tallies.  (Currently completed games are purged after 30 days)
 
 
-## 2026 Upgrde to DotNet 10
+## 2026 Upgrade to DotNet 10
 
 I still play the game every day with a small group.
 
