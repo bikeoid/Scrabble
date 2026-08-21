@@ -1,15 +1,55 @@
-﻿<div class="container letter-selector">
-    <div class="row">
-        @for (char c = 'A'; c <= 'Z'; c++)
-        {
-            char letter = c;
-            <div class="col-2">
-                <button @onclick="e => Submit(letter)" class="btn btn-sm btn-primary">@letter</button>
-            </div>
-        }
-    </div>
+﻿<div class="container">
+	<div class="player-tiles">
+		@for (char c = 'A'; c <= 'H'; c++)
+		{
+			char letter = c;
+			<div class="square-space tile-container" @onclick="e => Submit(letter)">
+				<div class="tile-content">
+					@letter
+				</div>
+			</div>
+		}
+	</div>
+	<div class="player-tiles">
+		@for (char c = 'I'; c <= 'P'; c++)
+		{
+			char letter = c;
+			<div class="square-space tile-container" @onclick="e => Submit(letter)">
+				<div class="tile-content">
+					@letter
+				</div>
+			</div>
+		}
+	</div>
+	<div class="player-tiles">
+		@for (char c = 'Q'; c <= 'X'; c++)
+		{
+			char letter = c;
+			<div class="square-space tile-container" @onclick="e => Submit(letter)">
+				<div class="tile-content">
+					@letter
+				</div>
+			</div>
+		}
+	</div>
+	<div class="player-tiles">
+		@if (1 == 1)
+		{
+			char letterY = 'Y';
+			<div class="square-space tile-container" @onclick="e => Submit(letterY)">
+				<div class="tile-content">
+					@letterY
+				</div>
+			</div>
+			char letterZ = 'Z';
+			<div class="square-space tile-container" @onclick="e => Submit(letterZ)">
+				<div class="tile-content">
+					@letterZ
+				</div>
+			</div>
+		}
+	</div>
 </div>
-
 @code {
     [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
 
