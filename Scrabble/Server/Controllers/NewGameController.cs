@@ -32,14 +32,15 @@ namespace Scrabble.Server.Controllers
         /// <returns>New game GameDto id</returns>
         [HttpPost]
 
-        public async Task<int> NewGame([FromBody] List<int> gamePlayerIds)
+        public async Task<int> NewGame([FromQuery] int skill, [FromBody] List<int> gamePlayerIds)
         {
+            Console.WriteLine($"NewGameController.NewGame called with skill {skill} and player IDs {string.Join(",", gamePlayerIds)}");
             var players = await (from pl in scrabbleDb.Players
                                  where gamePlayerIds.Any(g => g == pl.PlayerId)
                                  select pl).ToListAsync();
 
             OrderPlayersAs(players, gamePlayerIds);
-            var gameId = await CreateNewGame(players);
+            var gameId = await CreateNewGame(players, skill);
             return gameId;
         }
 
@@ -81,7 +82,7 @@ namespace Scrabble.Server.Controllers
             return foundIndex;
         }
 
-        private async Task<int> CreateNewGame(List<Data.Player> players)
+        private async Task<int> CreateNewGame(List<Data.Player> players, int skill)
         {
             // Find ID of player requesting new game
             var email = User.FindFirst(AppEmailClaimType.ThisAppEmailClaimType).Value;
@@ -100,7 +101,7 @@ namespace Scrabble.Server.Controllers
             {
                 if (dbPlayer.Email == ComputerPlayerDb.ComputerEmail)
                 {
-                    gamePlayers.Add(new ComputerPlayer(ComputerPlayerDb.ComputerName, dbPlayer.PlayerId, dbPlayer.Email));
+                    gamePlayers.Add(new ComputerPlayer(ComputerPlayerDb.ComputerName, dbPlayer.PlayerId, dbPlayer.Email, skill));
                 } else
                 {
                     var localPlayer = new HumanPlayer(dbPlayer.Name, dbPlayer.PlayerId, dbPlayer.Email);

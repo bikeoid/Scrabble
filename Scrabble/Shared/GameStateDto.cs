@@ -74,6 +74,11 @@ namespace Scrabble.Shared
                 this.Tiles = activePlayer.Tiles;
                 this.MyTurn= activePlayer.MyTurn;
                 this.PlayerPasses = activePlayer.PlayerPasses;
+                this.Skill = -1;
+                if (activePlayer is ComputerPlayer)
+                {
+                    this.Skill = ((ComputerPlayer)activePlayer).Skill;
+                }
             }
 
             public bool IsHuman { get; set; }
@@ -89,6 +94,7 @@ namespace Scrabble.Shared
             public List<Tile> Tiles { get; set; }
             public bool MyTurn { get; set; }
             public int PlayerPasses { get; set; }
+            public int Skill { get; set; }
 
         }
 

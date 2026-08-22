@@ -41,7 +41,7 @@ namespace Scrabble.Shared
                 activePlayer = new HumanPlayer(sourcePlayer.Name, sourcePlayer.PlayerId, sourcePlayer.Email);
             } else
             {
-                activePlayer = new ComputerPlayer(sourcePlayer.Name, sourcePlayer.PlayerId, sourcePlayer.Email);
+                activePlayer = new ComputerPlayer(sourcePlayer.Name, sourcePlayer.PlayerId, sourcePlayer.Email, sourcePlayer.Skill);
                 // No need to set computer algorithm since not used locally
             }
             activePlayer.Score = sourcePlayer.Score;
@@ -49,6 +49,7 @@ namespace Scrabble.Shared
             activePlayer.Tiles =sourcePlayer.Tiles;
             activePlayer.MyTurn = sourcePlayer.MyTurn;
             activePlayer.PlayerPasses = sourcePlayer.PlayerPasses;
+            activePlayer.Skill = sourcePlayer.Skill;
 
             return activePlayer;
         }
