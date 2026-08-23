@@ -40,14 +40,21 @@
 
             @if (PlayerGame.Active)
             {
-                msg += " - last move " + GetElapsedTime(PlayerGame.LastMoveOn) + "; the next player is " + (PlayerGame.MyMove ? "you" : PlayerGame.NextPlayerName);
+                if (String.IsNullOrEmpty(PlayerGame.MyMove ? "you" : PlayerGame.NextPlayerName))
+                {
+                    msg += " - created " + GetElapsedTime(PlayerGame.LastMoveOn) + " - ready to play !!!";
+                }
+                else
+                {
+                    msg += " - last move " + GetElapsedTime(PlayerGame.LastMoveOn) + " - the next player is " + (PlayerGame.MyMove ? "you" : PlayerGame.NextPlayerName);
+                }
             }
             else
             {
-                msg += $" ended {GetElapsedTime(PlayerGame.LastMoveOn)} - ";
+                msg += $" - ended {GetElapsedTime(PlayerGame.LastMoveOn)} - ";
                 if (PlayerGame.IWon)
                 {
-                    msg += "You won !";
+                    msg += "you won !";
                 }
                 else
                 {
@@ -56,7 +63,7 @@
                         msg += $"{PlayerGame.WinnerName} won";
                     } else
                     {
-                        msg += $" Outcome: {PlayerGame.Win_Type.ToString()}";
+                        msg += $"outcome: {PlayerGame.Win_Type.ToString()}";
                     }
                 }
             }
