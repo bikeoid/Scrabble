@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Scrabble.Client.Components;
 using Scrabble.Client.Pages;
 using Scrabble.Core.Types;
 using Scrabble.Server.Data;
@@ -83,7 +85,8 @@ namespace Scrabble.Server.Controllers
                                    WinnerId = g.WinnerId,
                                    WinnerName = g.WinnerName,
                                    WinType = g.WinType,
-                                   PlayerGames = g.PlayerGames }).ToListAsync();
+                                   PlayerGames = g.PlayerGames,
+                                   GameState = g.GameState}).ToListAsync();
 
             var returnGames = new List<GameSummaryDto>();
             foreach (var game in games)
@@ -92,6 +95,7 @@ namespace Scrabble.Server.Controllers
                 gameSummaryDto.GameId = game.GameId;
                 gameSummaryDto.Active = game.Active;
                 gameSummaryDto.LastMoveOn = game.LastMoveOn;
+                var gameStateDto = JsonConvert.DeserializeObject<GameStateDto>(game.GameState);
                 foreach (var playerGame in game.PlayerGames)
                 {
 
@@ -103,7 +107,20 @@ namespace Scrabble.Server.Controllers
                     }
                     else
                     {
-                        gameSummaryDto.OppponentUserNames.Add(playerGame.Player.Name);
+                        var name = playerGame.Player.Name;
+                        if (playerGame.Player.Name.Equals("Computer", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var referencedPlayer = gameStateDto.GamePlayerList.FirstOrDefault(p => p.PlayerId == playerGame.PlayerId);
+                            if (referencedPlayer != null)
+                            {
+                                if (Enum.IsDefined(typeof(NewOpponent.Level), referencedPlayer.Skill))
+                                {
+                                    var skillEnum = (NewOpponent.Level)referencedPlayer.Skill;
+                                    name = $"Computer ({skillEnum})";
+                                }
+                            }
+                        }
+                        gameSummaryDto.OppponentUserNames.Add(name);
                         gameSummaryDto.OtherScores.Add(playerGame.PlayerScore);
                     }
                     if (playerGame.MyMove)

@@ -1,6 +1,6 @@
 ﻿@*Display player score, with capability to indicate active player*@
 
-<div class="@PlayerClass">@CurrentPlayer.Name: @Score.ToString()</div>
+<div class="@PlayerClass">@PlayerName: @Score.ToString()</div>
 
 
 @code {
@@ -8,6 +8,7 @@
     [Parameter] public int Score{ get; set; }
 
     private string PlayerClass { get; set; }
+    private string PlayerName { get; set; } = "";
 
     public override async Task SetParametersAsync(ParameterView parameters)
     {
@@ -19,6 +20,14 @@
                 if (currentPlayer.MyTurn)
                 {
                     PlayerClass = "player-active-turn";
+                }
+                PlayerName = currentPlayer.Name;
+                if (Enum.IsDefined(typeof(NewOpponent.Level), currentPlayer.Skill))
+                {
+                    if (currentPlayer is ComputerPlayer)
+                    {
+                        PlayerName = $"({(NewOpponent.Level)currentPlayer.Skill})";
+                    }
                 }
             }
         }

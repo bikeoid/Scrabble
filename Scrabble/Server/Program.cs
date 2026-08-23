@@ -108,7 +108,12 @@ builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSe
 
 builder.Services.AddTransient<IMyEmailSender, MyEmailSender>();
 
-builder.Services.AddSignalR();
+builder.Services.AddSignalR().AddHubOptions<MoveHub>(options =>
+{
+    options.ClientTimeoutInterval = TimeSpan.FromHours(3);
+    options.HandshakeTimeout = TimeSpan.FromSeconds(30);
+    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+});
 
 builder.Services.AddSingleton<Scrabble.Core.AI.ComputerPlayerAI>();
 
