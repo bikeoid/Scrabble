@@ -113,7 +113,7 @@ namespace Scrabble.Core.Types
                 p.Tiles.Add(tile);
                 tile.TileInRack = true;
             }
-            Console.WriteLine($"GiveTiles - {startCount} +  Gave {givenTiles.Count}, result is {p.Tiles.Count} tiles");
+            Console.WriteLine($"GiveTiles : Has {startCount}, gave {givenTiles.Count}, result is {p.Tiles.Count} tiles");
             p.TilesUpdated();
         }
 
@@ -137,12 +137,12 @@ namespace Scrabble.Core.Types
             {
                 // Simulate tile draw winner by random pick
                 this.currentPlayerIndex = ThreadSafeRandom.Next(this.players.Count);
-                drawOutcome = $"{this.CurrentPlayer.Name} won the tile draw";
+                drawOutcome = $"{this.CurrentPlayer.Name} won the tile draw.";
             }
             else
             {
                 this.currentPlayerIndex = FindStartingPlayerIndex(startingPlayerId);
-                drawOutcome = $"Challenger {this.CurrentPlayer.Name} starts the game";
+                drawOutcome = $"Challenger {this.CurrentPlayer.Name} starts the game.";
             }
 
 
@@ -186,6 +186,7 @@ namespace Scrabble.Core.Types
         {
             ++this.passCount;
             LastMoveResult = $"{this.CurrentPlayer.Name} passed";
+            TrackRecentMoves();
         }
 
         void ITurnImplementor.PerformDumpLetters(DumpLetters dl)
@@ -193,6 +194,7 @@ namespace Scrabble.Core.Types
             if (TileBag.Inventory.Count == 0)
             {
                 LastMoveResult = $"{this.CurrentPlayer.Name} passed";  // Equivalent to pass (if computer player)
+                TrackRecentMoves();
                 return;
             }
 
@@ -207,6 +209,7 @@ namespace Scrabble.Core.Types
             this.GiveTiles(this.CurrentPlayer, dumpList.Count());
             TileBag.Put(dumpList);
             LastMoveResult = $"{this.CurrentPlayer.Name} swapped tiles";
+            TrackRecentMoves();
         }
 
         private void RemoveTileByID(string id, List<Tile> tiles)
@@ -275,10 +278,14 @@ namespace Scrabble.Core.Types
 
             this.GiveTiles(this.CurrentPlayer, turn.Letters.Count);
 
-            Console.WriteLine($"Gave {turn.Letters.Count} to {this.CurrentPlayer.Name}, have {this.CurrentPlayer.Tiles.Count}");
+            Console.WriteLine($"Gave {turn.Letters.Count} to {this.CurrentPlayer.Name}, has {this.CurrentPlayer.Tiles.Count}");
             lastMove = thisMove;
 
             LastMoveResult = $"{this.CurrentPlayer.Name} played {string.Join(", ", thisMove.ValidWordsMade)} for {thisMove.Score}";
+            TrackRecentMoves();
+            // set LastMoveResult to blank so the next player doesn't see the previous player's move result on
+            // the scoreboard line above the main playing board as it's now shown on the right hand side
+            LastMoveResult = "";
         }
 
 
@@ -289,7 +296,6 @@ namespace Scrabble.Core.Types
             {
                 RecentMoves.RemoveAt(0);  // Remove oldest entry
             }
-
         }
 
 
@@ -305,13 +311,15 @@ namespace Scrabble.Core.Types
             {
                 if (!this.IsOpeningMove && !(t is Scrabble.Core.Types.PlaceMove))
                     --this.moveCount;
-                TrackRecentMoves();
+                //TrackRecentMoves();
                 this.NextMove(LastMoveResult);  // Computer moves here if next player
             }
             else
             {
                 this.FinishGame(false);
-                TrackRecentMoves();
+                // moved the following call into FinishGame() because FinishGame() is also
+                // called from the NoMoveController when a player resigns
+                //TrackRecentMoves();
             }
 
 
@@ -428,9 +436,15 @@ namespace Scrabble.Core.Types
                 else
                 {
                     FinalGameStatus.Win_Type = WinTypes.WinType.Draw;
-                    LastMoveResult = "Game draw";
+                    LastMoveResult = "Game drawn";
                 }
             }
+
+            TrackRecentMoves();
+
+            // set to blank so does not appear on the scoreboard line above the
+            // main playing board as it's now shown on the right hand side
+            LastMoveResult = "";
 
             foreach (var player in this.players)
             {

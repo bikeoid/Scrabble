@@ -39,139 +39,242 @@
 else
 {
     <div class="scoreboard" id="scoreboard">
-        <div class="left-players">
-            @for (int i = 0; i < currentGame.players.Count; i++)
-            {
-                // Even players on left side
-                if ((i & 1) == 0)
-                {
-                    <PlayerScore CurrentPlayer="currentGame.players[i]" Score="currentGame.players[i].Score"></PlayerScore>
-                }
-            }
-        </div>
-        @if (currentGame.Players.Count() > 2)
-        {
-            <div class="human-message"> <PreviousMoveList Collapsed=true Title="@MessageForLocalHuman" MoveList="currentGame.RecentMoves"></PreviousMoveList> </div>
-        } else
-        {
-            <div class="human-message">@MessageForLocalHuman</div>
-        }
-        <div class="right-players">
-            @for (int i = 0; i < currentGame.players.Count; i++)
-            {
-                // Odd players on right side
-                if ((i & 1) != 0)
-                {
-                    <PlayerScore CurrentPlayer="currentGame.players[i]" Score="currentGame.players[i].Score"></PlayerScore>
-                }
-            }
-        </div>
+        <div class="human-message">@MessageForLocalHuman</div>
     </div>
-    <div class="game" id="game">
-        <div class="game-element-container">
-            <div class="game-board">
-                @for (int y = 0; y < ScrabbleConfig.BoardLength; y++)
+    <p> </p>
+
+    <div class="container">
+        <div class="row">
+            <!-- Player scores on the left, current player at the top, next player below -->
+            <div class="col">
+                @{int j = 0; int opacity = 100;}
+                <!-- If I am the current player, add a border decoration to prompt me -->
+                @{string border_decoration_your_go = "border border-3 border-danger rounded-3";}
+                @if (!MyMove)
                 {
-                    @for (int x = 0; x < ScrabbleConfig.BoardLength; x++)
+                    border_decoration_your_go = "";
+                }
+                <!-- Display the current player at the top with a green background -->
+                @for (int i = 0; i < currentGame.players.Count; i++)
+                {
+                    @if (currentGame.players[i].MyTurn)
                     {
-                        var square = Game.Instance.PlayingBoard.Get(x, y);
-                        <Scrabble.Client.Components.UISquare SquareContainer="square" />
+                        j = i;
+                        <div class=@($"card mb-4 text-white bg-success {border_decoration_your_go}")>
+                            <h5 class="card-header">@currentGame.players[i].Name</h5>
+                            <h4 class="card-body" style="text-align: right; font-weight: bold;">@currentGame.players[i].Score</h4>
+                        </div>
                     }
                 }
-            </div>
-        </div>
-
-        <div>&nbsp;</div>
-        <div class="game-element-container">
-            <div class="player-tiles">
-                @if (!MyMove && currentMoveGameDto != null)
+                @{string border_decoration_track_me = "";}
+                <!-- Display the other players below with decreasing opacity -->
+                @for (int i = 0; i < currentGame.players.Count - 1; i++)
                 {
-                    <button class="professor-owl" @onclick=ShowProfessorAdvisor>
-
-                    </button>
-                }
-                @if (showProfessorDialog)
-                {
-                    <div class="professor-dialog">
-                        <table>
-                            <tr>
-                                <td rowspan="2">
-                                    <img src="/images/ProfessorOwl2.png" class="professor-icon" />
-                                </td>
-                                <td class="text-center">
-                                    @professorMessage <br />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-
-                                </td>
-                                <td class="text-center">
-                                    <button @onclick=ProfessorDialogOk>OK</button>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                }
-                <button @onclick=Shuffle disabled="@DisabledShuffle()">Shuffle</button>
-                @for (int i = 0; i < TilesInRack.Count; i++)
-                {
-                    var index = i;
-
-                    <UITile @key="TilesInRack[index].ID" TilePiece="TilesInRack[index]"></UITile>
-                }
-                <div class="tile-bag-area">
-                    <div class="tile-bag">
-                        @currentGame.TileBag.Inventory.Count
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="information-buttons">
-            <div class="buttons mt-4 mb-2">
-                @if (!MyMove && MyGamesList.NextUnplayedGameId() > 0)
-                {
-                    <button class="chat-alert" @onclick=NextUnplayedGame>Next Game</button>
-                }
-
-                @if (currentGame.FinalGameStatus == null)
-                {
-                    @if (IsSwapping)
+                    j = (j + 1) % currentGame.players.Count;
+                    @if (currentGame.players[j].Name == myEmail)
                     {
-                        <span>(Exchange): Select tiles </span>
-                        <button @onclick=StopSwap disabled="@Disabled()">Cancel</button>
-                        <button @onclick=DoSwap disabled="@Disabled(SwappingTiles.Count == 0 || (SwappingTiles.Count > currentGame.TileBag.Inventory.Count))">Swap</button>
-
-                    }
-                    else if (WordInPlay.Count == 0)
-                    {
-                        <button @onclick=Pass disabled="@Disabled(!MyMove)">Pass</button>
-                        <button @onclick=StartSwap disabled="@Disabled(!MyMove || !CanSwap)">Exchange</button>
+                        border_decoration_track_me = "border border-2 border-warning rounded-3";
                     }
                     else
                     {
-                        <button @onclick=Play disabled="@Disabled(WordInPlay.Count==0 || !validMove)">Play</button>
-                        <button @onclick=Recall disabled="@Disabled(WordInPlay.Count==0)">Recall</button>
+                        border_decoration_track_me = "";
                     }
-                    <button @onclick=Resign disabled="@Disabled()">Resign</button>
+                    opacity -= 25;
+                    <div class=@($"card mb-4 text-black bg-secondary bg-opacity-{opacity} {border_decoration_track_me}")>
+                        <h6 class="card-header">@currentGame.players[j].Name</h6>
+                        <h5 class="card-body" style="text-align: right;">@currentGame.players[j].Score</h5>
+                    </div>
                 }
-                else
-                {
-                    <button @onclick=Rematch disabled="@IsSubmitting">Rematch</button>
-
-                }
-
-                <button class="@ChatAlert()" @onclick=ShowChat>Chat</button>
             </div>
 
+            <!-- Game board in the middle -->
+            <div class="col">
+                <div class="game" id="game">
+                    <div class="game-element-container">
+                        <div class="game-board">
+                            @for (int y = 0; y < ScrabbleConfig.BoardLength; y++)
+                            {
+                                @for (int x = 0; x < ScrabbleConfig.BoardLength; x++)
+                                {
+                                    var square = Game.Instance.PlayingBoard.Get(x, y);
+                                    <Scrabble.Client.Components.UISquare SquareContainer="square" />
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
 
+            <!-- Previous moves and scores on the right -->
+            <div class="col">
+                @for (int i = currentGame.RecentMoves.Count - 1; i >= 0; i--)
+                {
+                    <!-- 'who' will only contain a name if 'action' is "played", "passed", "swapped" or "won"
+                    otherwise it will contain "Game" and 'action' will contain "resigned" or "drawn" -->
+                    string who = currentGame.RecentMoves[i].Split(' ')[0];
+                    string action = currentGame.RecentMoves[i].Split(' ')[1];
+                    @if (action == "played")
+                    {
+                        <div class="card mb-1 text-black bg-primary bg-opacity-50">
+                            <h6 class="card-header">@who</h6>
+                            <div class="card-body">@string.Join(" ", currentGame.RecentMoves[i].Split(' ')[1..^2])</div>
+                            <div class="card-footer" style="text-align: right; font-weight: bold; font-style: italic;">Score : @currentGame.RecentMoves[i].Split(' ')[^1]</div>
+                        </div>
+                    }
+                    else if (action == "won")
+                    {
+                        <div class="card mb-1 text-white bg-primary">
+                            <h6 class="card-header">@who</h6>
+                            <div class="card-body">Won the game</div>
+                        </div>
+                    }
+                    else if (action == "passed")
+                    {
+                        <div class="card mb-1 text-black bg-warning">
+                            <h6 class="card-header">@who</h6>
+                            <div class="card-body">Passed</div>
+                        </div>
+                    }
+                    else if (action == "swapped")
+                    {
+                        <div class="card mb-1 text-black bg-warning">
+                            <h6 class="card-header">@who</h6>
+                            <div class="card-body">Swapped tiles</div>
+                        </div>
+                    }
+                    else if (action == "resigned")
+                    {
+                        <div class="card mb-1 text-white bg-danger">
+                            <div class="card-body">Resigned</div>
+                        </div>
+                    }
+                    else if (action == "drawn")
+                    {
+                        <div class="card mb-1 text-white bg-secondary">
+                            <div class="card-body">Match drawn</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="card mb-1 text-white bg-dark">
+                            <div class="card-body">? Unknown action ?</div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- The owl, player tile rack and tile bag -->
+        <div class="row">
+            <div>&nbsp;</div>
+            <div class="col">
+                <p>&nbsp;</p>
+            </div>
+            <div class="col">
+                <div class="game-element-container">
+                    <div class="player-tiles">
+                        @if (!MyMove && currentMoveGameDto != null)
+                        {
+                            <button class="professor-owl" @onclick=ShowProfessorAdvisor>
+
+                            </button>
+                        }
+                        @if (showProfessorDialog)
+                        {
+                            <div class="professor-dialog">
+                                <table>
+                                    <tr>
+                                        <td rowspan="2">
+                                            <img src="/images/ProfessorOwl2.png" class="professor-icon" />
+                                        </td>
+                                        <td class="text-center">
+                                            @professorMessage <br />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+
+                                        </td>
+                                        <td class="text-center">
+                                            <button @onclick=ProfessorDialogOk>OK</button>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        }
+                        <button @onclick=Shuffle disabled="@DisabledShuffle()">Shuffle</button>
+                        @for (int i = 0; i < TilesInRack.Count; i++)
+                        {
+                            var index = i;
+
+                            <UITile @key="TilesInRack[index].ID" TilePiece="TilesInRack[index]"></UITile>
+                        }
+                        <div class="tile-bag-area">
+                            <div class="tile-bag">
+                                @currentGame.TileBag.Inventory.Count
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <p>&nbsp;</p>
+            </div>
+        </div>
+
+        <!-- Action buttons -->
+        <!-- <div class="information-buttons"> -->
+        <div class="row">
+            <div>&nbsp;</div>
+            <div class="col">
+                <p>&nbsp;</p>
+            </div>
+            <div class="col">
+                <!-- <div class="game-element-container"> -->
+                    <!-- <div class="information-buttons"> <!-- mt-4 mb-2"> -->
+                        @if (!MyMove && MyGamesList.NextUnplayedGameId() > 0)
+                        {
+                            <button class="next-game-nudge" @onclick=NextUnplayedGame>Next Game</button>
+                        }
+
+                        @if (currentGame.FinalGameStatus == null)
+                        {
+                            @if (IsSwapping)
+                            {
+                                <span>(Exchange): Select tiles </span>
+                                <button @onclick=StopSwap disabled="@Disabled()">Cancel</button>
+                                <button @onclick=DoSwap disabled="@Disabled(SwappingTiles.Count == 0 || (SwappingTiles.Count > currentGame.TileBag.Inventory.Count))">Swap</button>
+
+                            }
+                            else if (WordInPlay.Count == 0)
+                            {
+                                <button @onclick=Pass disabled="@Disabled(!MyMove)">Pass</button>
+                                <button @onclick=StartSwap disabled="@Disabled(!MyMove || !CanSwap)">Exchange</button>
+                            }
+                            else
+                            {
+                                <button @onclick=Play disabled="@Disabled(WordInPlay.Count==0 || !validMove)">Play</button>
+                                <button @onclick=Recall disabled="@Disabled(WordInPlay.Count==0)">Recall</button>
+                            }
+                            <button @onclick=Resign disabled="@Disabled()">Resign</button>
+                        }
+                        else
+                        {
+                            <button @onclick=Rematch disabled="@IsSubmitting">Rematch</button>
+                        }
+
+                        <button class="@ChatAlert()" @onclick=ShowChat>Chat</button>
+                    <!-- </div> -->
+                <!-- </div> -->
+            </div>
+            <div class="col">
+                <p>&nbsp;</p>
+            </div>
         </div>
 
         <audio @key="@(audioId)" src="@soundUrl" type="audio/mp3" autoplay>
             Your browser does not support the html audio tag.
         </audio>
-
     </div>
 }
 
@@ -823,13 +926,13 @@ else
 
             await ApplyDownloadToGui(currentGame, gameDto);
 
-            MessageForLocalHuman = currentGame.RecentMoves[currentGame.RecentMoves.Count - 1];
-            var wasRegularMove = MessageForLocalHuman.Contains(" played "); // Kludge check
-            if (currentGame.players.Count == 2 && wasRegularMove)
-            {
-                MessageForLocalHuman = ""; // Suppress text detail since it's highlighted on tiles (keep cleaner display)
-            }
-
+            //MessageForLocalHuman = currentGame.RecentMoves[currentGame.RecentMoves.Count - 1];
+            //var wasRegularMove = MessageForLocalHuman.Contains(" played "); // Kludge check
+            //if (currentGame.players.Count == 2 && wasRegularMove)
+            //{
+            //    MessageForLocalHuman = ""; // Suppress text detail since it's highlighted on tiles (keep cleaner display)
+            //}
+            MessageForLocalHuman = ""; // Suppress text detail since it's highlighted on tiles (keep cleaner display)
         }
         catch (Exception ex)
         {
@@ -1082,13 +1185,7 @@ else
     // Passed to the GameViewModel, which uses it to prompt user for a letter for a blank tile
     private async Task<char> GetBlankTileLetter()
     {
-        var options = new ModalOptions
-        {
-            Size = ModalSize.Custom,
-            SizeCustomClass = "blank-letter-modal-size"
-        };
-
-        var result = await Modal.Show<BlankLetterSelector>("Select a Letter", options).Result;
+        var result = await Modal.Show<BlankLetterSelector>("Select a blank tile letter").Result;
         if (result.Cancelled)
         {
             return '#';

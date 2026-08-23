@@ -19,6 +19,10 @@ article.content {
     transition: 0.3s;
 }
 
+a.game-link {
+    text-decoration: none;
+}
+
 a.game-link:hover {
     text-decoration: none;
 }
@@ -124,6 +128,11 @@ textarea {
 
 .chat-alert {
     background-color: greenyellow;
+}
+
+.next-game-nudge {
+    color: white;
+    background-color: purple;
 }
 
 .game-board {
@@ -372,9 +381,24 @@ textarea {
     line-height: 1.5em;
 }
 
+.blank-tile-selection {
+    width: 2.8vw;
+    height: 2.8vw;
+    background-image: url("/Images/woodknots.jpg");
+    background-size: 100% 100%;
+    border-radius: .5vw;
+    color: darkred;
+    text-align: center;
+    font-size: 1.9vw;
+    font-weight: bolder;
+    font-style: normal;
+    cursor: pointer;
+    user-select: none;
+}
+
 .scoreboard {
     border: 1px black solid;
-    width: 400px;  /* auto adjusted by Javascript */
+    /* width: 400px;  auto adjusted by Javascript */
     display: flex;
     justify-content: space-between;
     margin-left: auto;
@@ -397,7 +421,7 @@ textarea {
 
 
 .human-message {
-    background-color: lightgrey;
+    background-color: lightblue;
 }
 
 .blank-letter-modal-size {
@@ -473,11 +497,11 @@ textarea {
 
 .game {
     text-align: center;
-    width: 400px;
-    height: 400px;
+    /*width: 400px;
+    height: 400px;*/
     margin-left: auto;
     margin-right: auto;
-    border: 1px black solid;
+    /*border: 1px black solid;*/
 }
 
     .game .game-element-container {
