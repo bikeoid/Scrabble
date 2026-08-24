@@ -36,31 +36,54 @@
 <a class="game-link" href=@($"/game/{PlayerGame.GameId}")>
     <div class=@($"game-card ml-3 card text-white bg-{background}")>
         <div class="card-body">
-            <p>Game @PlayerGame.GameId with @string.Join(", ", PlayerGame.OppponentUserNames.Select(x => x)), your score @PlayerGame.MyScore, their score  @string.Join(", ", PlayerGame.OtherScores.Select(x => x.ToString())) 
-                 - @GetElapsedTime(PlayerGame.LastMoveOn)
-            </p>
+            @{string msg = $"Game {PlayerGame.GameId}";}
 
             @if (PlayerGame.Active)
             {
-                <p>Next player: @(PlayerGame.MyMove ? "you" : PlayerGame.NextPlayerName)</p>
-            } else
+                if (String.IsNullOrEmpty(PlayerGame.MyMove ? "you" : PlayerGame.NextPlayerName))
+                {
+                    msg += " - created " + GetElapsedTime(PlayerGame.LastMoveOn) + " - ready to play !!!";
+                }
+                else
+                {
+                    msg += " - last move " + GetElapsedTime(PlayerGame.LastMoveOn) + " - the next player is " + (PlayerGame.MyMove ? "you" : PlayerGame.NextPlayerName);
+                }
+            }
+            else
             {
+                msg += $" - ended {GetElapsedTime(PlayerGame.LastMoveOn)} - ";
                 if (PlayerGame.IWon)
                 {
-                    <p>You won!</p>
-                } else
+                    msg += "you won !";
+                }
+                else
                 {
                     if (PlayerGame.Win_Type == WinTypes.WinType.Win)
                     {
-                        <p>@PlayerGame.WinnerName won</p>
+                        msg += $"{PlayerGame.WinnerName} won";
                     } else
                     {
-                        <p>Game outcome: @PlayerGame.Win_Type.ToString()</p>
-                       
+                        msg += $"outcome: {PlayerGame.Win_Type.ToString()}";
                     }
                 }
             }
+            <div>@msg</div>
 
+
+            @{string sfx = "score"; string opmsg = "";}
+            @for (int i = 0; i < PlayerGame.OppponentUserNames.Count; i++)
+            {
+                opmsg += $"{PlayerGame.OppponentUserNames[i]} - {PlayerGame.OtherScores[i]}";
+                if (i < PlayerGame.OppponentUserNames.Count - 1)
+                {
+                    opmsg += ", ";
+                }
+            }
+            @if (PlayerGame.OppponentUserNames.Count > 1) sfx += "s";
+
+            <p style="margin :1em"><strong>Your score: @PlayerGame.MyScore</strong><br>
+            Opponent @sfx: @opmsg
+            </p>
         </div>
     </div>
 </a>
@@ -103,11 +126,11 @@
             string articleSuffix = name[0] == 'h' ? "n" : String.Empty;
             return subValue == 0
                 ? String.Format("A{0} {1} ago", articleSuffix, name)
-                : String.Format("About a{0} {1} ago", articleSuffix, name);
+                : String.Format("about a{0} {1} ago", articleSuffix, name);
         }
         return subValue == 0
             ? String.Format("{0} {1}s ago", value, name)
-            : String.Format("About {0} {1}s ago", value, name);
+            : String.Format("about {0} {1}s ago", value, name);
     }
 
 }
