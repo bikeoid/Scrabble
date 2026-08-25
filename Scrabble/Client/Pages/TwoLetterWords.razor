@@ -9,8 +9,8 @@
 @inject NavigationManager NavigationManager
 
 
-<h3>Two Letter Words</h3>
-
+<h3>List of valid two letter Scrabble words</h3>
+<p> </p>
 
 <div class="container">
     @if (TwoLetterWordGroups == null)
@@ -19,32 +19,75 @@
     }
     else
     {
-        <ul>
-            @foreach (var wordGroup in TwoLetterWordGroups)
+        <div class="row border-bottom border-dark border-4">
+            <div class="col-1">
+                <div class="fw-bold"> </div>
+            </div>
+            <div class="col">
+                <div class="fw-bold text-start">Ordered by 1st letter</div>
+            </div>
+            <div class="col">
+                <div class="fw-bold text-end">Ordered by 2nd letter</div>
+            </div>
+            <div class="col-1">
+                <div class="fw-bold"> </div>
+            </div>
+        </div>
+        string byFirst = ""; string bySecond = ""; char letter = ' ';
+        string fgrnd = ""; string bgrnd = ""; int opacity=100;
+        @for (int i = 0; i < 26; i++)
+        {
+            if (i % 2 == 0)
             {
-                <li>
-                    @wordGroup
-                </li>
+                opacity = 100;
+                fgrnd = "primary";
+                bgrnd = "light";
             }
-
-        </ul>
+            else
+            {
+                opacity = 75;
+                fgrnd = "black";
+                bgrnd = "white";
+            }
+            byFirst = TwoLetterWordGroups[i];
+            bySecond = ReversedTwoLetterWordGroups[i];
+            letter = (char)('A' + i);
+            <div class=@($"row text-{fgrnd} text-opacity-{opacity} bg-{bgrnd} border-bottom border-dark border-1")>
+                <div class="col-1">
+                    <div class="text-end fw-bold">@letter?</div>
+                </div>
+                <div class="col">
+                    <div class="text-start">@byFirst</div>
+                </div>
+                <div class="col">
+                    <div class="text-end">@bySecond</div>
+                </div>
+                <div class="col-1">
+                    <div class="text-start fw-bold">?@letter</div>
+                </div>
+            </div>
+        }
     }
-
 </div>
 
 
 
 @code {
     private List<string> TwoLetterWordGroups;  // Grouped by 1st letter
+    private List<string> ReversedTwoLetterWordGroups;  // Grouped by 2nd letter
     private string loadMessage = "Retrieving word list...";
-
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             var wordList = await Http.GetFromJsonAsync<List<string>>($"/api/TwoLetterWords");
-            BuildWordGroups(wordList);
+
+            TwoLetterWordGroups = BuildWordGroups(wordList);
+
+            var reversedWordList = BuildListOfReversedWords(wordList);
+            var tempList = BuildWordGroups(reversedWordList);
+            ReversedTwoLetterWordGroups = UnReverseWordsInWordGroups(tempList);
         }
         catch (Exception ex)
         {
@@ -53,40 +96,65 @@
         }
     }
 
-    private void BuildWordGroups(List<string> twoLetterWords)
+    private List<string> BuildListOfReversedWords(List<string> twoLetterWords)
+    {
+        var listOfReversedWords = new List<string>();
+        foreach (string wrd in twoLetterWords)
+        {
+            char[] charArray = wrd.ToCharArray();
+            Array.Reverse(charArray);
+            string rwrd = new string(charArray);
+            listOfReversedWords.Add(rwrd);
+        }
+        return listOfReversedWords;
+    }
+
+    private List<string> UnReverseWordsInWordGroups(List<string> reversedWordGroups)
+    {
+        var unReversedWordGroups = new List<string>();
+        foreach (var group in reversedWordGroups)
+        {
+            var words = group.Split(", ");
+            var unReversedWords = words.Select(w => { char[] charArray = w.ToCharArray(); Array.Reverse(charArray); return new string(charArray); });
+            unReversedWordGroups.Add(string.Join(", ", unReversedWords));
+        }
+        return unReversedWordGroups;
+    }
+
+    private List<string> BuildWordGroups(List<string> twoLetterWords)
     {
         twoLetterWords.Sort();
 
-        TwoLetterWordGroups = new List<string>();
-        var lastLetter = ' ';
+        // local variable to hold the groups of words
+        var tlwGroups = new List<string>();
+
+        var lastLetter = 'A';
         var wordGroup = new StringBuilder();
         var separator = ", ";
-        foreach (var wrd in twoLetterWords)
-        {
-            if (wrd[0] != lastLetter)
+        for (int i = 0; i < 26; i++)
+		{
+			var letter = (char)('A' + i);
+            foreach (var wrd in twoLetterWords)
             {
-                if (wordGroup.Length > 0)
+                if (letter != lastLetter)
                 {
-                    TwoLetterWordGroups.Add(wordGroup.ToString());
+                    lastLetter = letter;
+                    tlwGroups.Add(wordGroup.ToString());
                     wordGroup.Clear();
                 }
-                wordGroup.Append(wrd);
-                lastLetter = wrd[0];
-            } else
-            {
-                wordGroup.Append(separator);
-                wordGroup.Append(wrd);
+                if (wrd[0] == letter)
+                {
+                    if (wordGroup.Length > 0)
+                    {
+                        wordGroup.Append(separator);
+                    }
+                    wordGroup.Append(wrd);
+                }
             }
         }
-        if (wordGroup.Length > 0)
-        {
-            TwoLetterWordGroups.Add(wordGroup.ToString());
-        }
 
+        tlwGroups.Add(wordGroup.ToString());
+
+        return tlwGroups;
     }
-
-
-
 }
-
-

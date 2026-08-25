@@ -105,7 +105,11 @@ namespace Scrabble.Core.Types
         public void GiveTiles(Player p, int n)
         {
             if (TileBag.IsEmpty)
+            {
+                Console.WriteLine("No tiles in the bag");
+                Console.WriteLine($"{p.Name} has {p.Tiles.Count}");
                 return;
+            }   
             var givenTiles = TileBag.Take(n);
             int startCount = p.Tiles.Count;
             foreach (var tile in givenTiles)
@@ -113,7 +117,7 @@ namespace Scrabble.Core.Types
                 p.Tiles.Add(tile);
                 tile.TileInRack = true;
             }
-            Console.WriteLine($"GiveTiles : Has {startCount}, gave {givenTiles.Count}, result is {p.Tiles.Count} tiles");
+            Console.WriteLine($"{p.Name} has {startCount}, gave {givenTiles.Count}, result is {p.Tiles.Count} tiles");
             p.TilesUpdated();
         }
 
@@ -278,7 +282,9 @@ namespace Scrabble.Core.Types
 
             this.GiveTiles(this.CurrentPlayer, turn.Letters.Count);
 
-            Console.WriteLine($"Gave {turn.Letters.Count} to {this.CurrentPlayer.Name}, has {this.CurrentPlayer.Tiles.Count}");
+            // rely on GiveTiles to report the number of tiles given and the current player's tile count
+            // because this next line is wrong when the tile bag is empty
+            //Console.WriteLine($"Gave {turn.Letters.Count} to {this.CurrentPlayer.Name}, has {this.CurrentPlayer.Tiles.Count}");
             lastMove = thisMove;
 
             LastMoveResult = $"{this.CurrentPlayer.Name} played {string.Join(", ", thisMove.ValidWordsMade)} for {thisMove.Score}";
