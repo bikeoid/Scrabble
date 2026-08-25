@@ -104,7 +104,7 @@
 
         return ProcessPeriod(date.Year - 1, date.Month - 1, "year")
                ?? ProcessPeriod(date.Month - 1, date.Day - 1, "month")
-               ?? ProcessPeriod(date.Day - 1, date.Hour, "day", "Yesterday")
+               ?? ProcessPeriod(date.Day - 1, date.Hour, "day", "yesterday")
                ?? ProcessPeriod(date.Hour, date.Minute, "hour")
                ?? ProcessPeriod(date.Minute, date.Second, "minute")
                ?? ProcessPeriod(date.Second, 0, "second")
