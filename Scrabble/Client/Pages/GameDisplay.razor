@@ -51,48 +51,89 @@ else
         <div class="row mb-3">
             <!-- Player scores on the left, current player at the top, next player below -->
             <div class="col-auto">
-                @{int j = 0; int opacity = 100;}
-                <!-- If I am the current player, add a border decoration to prompt me -->
-                @{string border_decoration_your_go = "border border-3 border-danger rounded-3";}
                 <!-- 10rem => 160px -->
                 <!-- 12rem => 192px -->
                 <!-- 15rem => 240px -->
                 <!-- @{string score_card_style_options = "width: 10rem; max-width: 12rem";} -->
                 @{string score_card_style_options = "width: 12rem";}
-                @if (!MyMove)
+                @if (currentGame.FinalGameStatus == null)
                 {
-                    border_decoration_your_go = "";
-                }
-                <!-- Display the current player at the top with a green background -->
-                @for (int i = 0; i < currentGame.players.Count; i++)
-                {
-                    @if (currentGame.players[i].MyTurn)
+                    <!-- the game is still in progress -->
+                    int j = 0; int opacity = 100;
+                    <!-- If I am the current player, add a border decoration to prompt me -->
+                    string border_decoration_your_go = "border border-3 border-danger rounded-3";
+                    @if (!MyMove)
                     {
-                        j = i;
-                        <div class=@($"card mb-4 text-white bg-success {border_decoration_your_go}") style=@($"{score_card_style_options}")>
-                            <h5 class="card-header">@currentGame.players[i].Name</h5>
-                            <h4 class="card-body" style="text-align: right; font-weight: bold;">@currentGame.players[i].Score</h4>
+                        border_decoration_your_go = "";
+                    }
+                    <!-- Display the current player at the top with a green background -->
+                    @for (int i = 0; i < currentGame.players.Count; i++)
+                    {
+                        @if (currentGame.players[i].MyTurn)
+                        {
+                            j = i;
+                            <div class=@($"card mb-4 text-white bg-success {border_decoration_your_go}") style=@($"{score_card_style_options}")>
+                                <h5 class="card-header">@currentGame.players[i].Name</h5>
+                                <h4 class="card-body" style="text-align: right; font-weight: bold;">@currentGame.players[i].Score</h4>
+                            </div>
+                        }
+                    }
+                    string border_decoration_track_me = "";
+                    <!-- Display the other players below with decreasing opacity -->
+                    @for (int i = 0; i < currentGame.players.Count - 1; i++)
+                    {
+                        j = (j + 1) % currentGame.players.Count;
+                        @if (currentGame.players[j].Name == myName)
+                        {
+                            border_decoration_track_me = "border border-2 border-warning rounded-3";
+                        }
+                        else
+                        {
+                            border_decoration_track_me = "";
+                        }
+                        opacity -= 25;
+                        <div class=@($"card mb-4 text-black bg-secondary bg-opacity-{opacity} {border_decoration_track_me}") style=@($"{score_card_style_options}")>
+                            <h6 class="card-header">@currentGame.players[j].Name</h6>
+                            <h5 class="card-body" style="text-align: right;">@currentGame.players[j].Score</h5>
                         </div>
                     }
                 }
-                @{string border_decoration_track_me = "";}
-                <!-- Display the other players below with decreasing opacity -->
-                @for (int i = 0; i < currentGame.players.Count - 1; i++)
+                else
                 {
-                    j = (j + 1) % currentGame.players.Count;
-                    @if (currentGame.players[j].Name == myName)
+                    <!-- game is over -->
+                    <!-- update the player score cards because the recent moves -->
+                    <!-- may not be being displayed -->
+                    @if (currentGame.FinalGameStatus.Win_Type == WinTypes.WinType.Win)
                     {
-                        border_decoration_track_me = "border border-2 border-warning rounded-3";
+                        @for (int i = 0; i < currentGame.players.Count; i++)
+                        {
+                            if (currentGame.players[i].Name == currentGame.FinalGameStatus.WinningPlayerName)
+                            {
+                                <div class=@($"card mb-4 text-white bg-primary") style=@($"{score_card_style_options}")>
+                                    <h5 class="card-header">@currentGame.players[i].Name won</h5>
+                                    <h4 class="card-body" style="text-align: right; font-weight: bold;">@currentGame.players[i].Score</h4>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class=@($"card mb-4 text-white bg-danger") style=@($"{score_card_style_options}")>
+                                    <h5 class="card-header">@currentGame.players[i].Name</h5>
+                                    <h4 class="card-body" style="text-align: right; font-weight: bold;">@currentGame.players[i].Score</h4>
+                                </div>
+                            }
+                        }
                     }
                     else
                     {
-                        border_decoration_track_me = "";
+                        <!-- this could be a draw or due to a player resignation -->
+                        @for (int i = 0; i < currentGame.players.Count; i++)
+                        {
+                            <div class=@($"card mb-4 text-black bg-warning") style=@($"{score_card_style_options}")>
+                                <h5 class="card-header">@currentGame.players[i].Name</h5>
+                                <h4 class="card-body" style="text-align: right; font-weight: bold;">@currentGame.players[i].Score</h4>
+                            </div>
+                        }
                     }
-                    opacity -= 25;
-                    <div class=@($"card mb-4 text-black bg-secondary bg-opacity-{opacity} {border_decoration_track_me}") style=@($"{score_card_style_options}")>
-                        <h6 class="card-header">@currentGame.players[j].Name</h6>
-                        <h5 class="card-body" style="text-align: right;">@currentGame.players[j].Score</h5>
-                    </div>
                 }
             </div>
 

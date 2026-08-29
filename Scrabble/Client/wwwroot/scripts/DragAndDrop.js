@@ -23,16 +23,17 @@ function handleWindowSize() {
     console.log("   clientWidth=" + sidebarWindow.clientWidth + ", clientHeight=" + sidebarWindow.clientHeight);
     console.log("   offsetWidth=" + sidebarWindow.offsetWidth + ", offsetHeight=" + sidebarWindow.offsetHeight);
 
-    var gameWindow = document.getElementById('game');
-    var positionInfo = gameWindow.getBoundingClientRect();
+    // game element
+    //var gameWindow = document.getElementById('game');
+    //var positionInfo = gameWindow.getBoundingClientRect();
     // dimensions of game element
     //var gameHeight = Math.floor(positionInfo.height);
     //var gameWidth = Math.floor(positionInfo.width);
     // or...
-    var gameHeight = gameWindow.offsetHeight;
-    var gameWidth = gameWindow.offsetWidth;
-    console.log("Game dimensions:")
-    console.log("   width=" + gameWidth + ", height=" + gameHeight);
+    //var gameHeight = gameWindow.offsetHeight;
+    //var gameWidth = gameWindow.offsetWidth;
+    //console.log("Game dimensions:")
+    //console.log("   width=" + gameWidth + ", height=" + gameHeight);
 
     var gamePlayRow = document.getElementById('game-play-row');
     var gamePlayRowHeight = gamePlayRow.offsetHeight;
@@ -84,7 +85,7 @@ function handleWindowSize() {
     gameArea.style.width = boardSide + "px";
 
     // i wonder what all the following variables are for
-    // some are fairly obvious but i wonder if some of the less obvious
+    // some are fairly obvious but maybe some of the less obvious
     // ones might be the reason for the double tile drop issue
     // perhaps due to a rounding error in a size causing issues with
     // cursor position events during drag and drop ?
@@ -92,7 +93,7 @@ function handleWindowSize() {
     // board and the large tile being dragged from the tile rack is not
     // cleared down
     // perhaps the innerSquareSize is too close in dimensions to the
-    // squareSize, so let's reduce by 2 pixels rather than 1
+    // squareSize, so let's reduce by 2 pixels rather than 1 and see what happens
     // might make drag and drop less responsive/accurate ?
     var pixelWidth = Math.floor(boardSide / 15) - 1;
 
@@ -115,7 +116,7 @@ function handleWindowSize() {
     var tileRackSize = (pixelWidth + Math.floor((pixelWidth * 4) / 10)) + "px";
 
     console.log("pixelWidth=" + pixelWidth + ", (x 0.14)=" + pixelWidth * 0.14);
-    console.log("square size=" + squareSize + ", inner square size=" + innerSquareSize);
+    console.log("squareSize=" + squareSize + ", innerSquareSize=" + innerSquareSize);
     console.log("overscanPixels=" + overscanPixels + ", oversizeMarker=" + oversizeMarker + ", overscanSize=" + overscanSize);
     console.log("tileFontSize=" + tileFontSize + ", tileScoreFontSize=" + tileScoreFontSize + ", squareFontSize=" + squareFontSize);
     console.log("tileRackSize=" + tileRackSize);
