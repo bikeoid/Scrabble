@@ -38,18 +38,27 @@
 }
 else
 {
-    <div class="scoreboard" id="scoreboard">
-        <div class="human-message">@MessageForLocalHuman</div>
-    </div>
-    <p> </p>
-
     <div class="container">
-        <div class="row">
+        @if (!String.IsNullOrEmpty(MessageForLocalHuman))
+        {
+            <div class="scoreboard" id="scoreboard">@MessageForLocalHuman</div>
+        }
+        else
+        {
+            <div>&nbsp;</div>
+        }
+
+        <div class="row mb-3">
             <!-- Player scores on the left, current player at the top, next player below -->
-            <div class="col">
+            <div class="col-auto">
                 @{int j = 0; int opacity = 100;}
                 <!-- If I am the current player, add a border decoration to prompt me -->
                 @{string border_decoration_your_go = "border border-3 border-danger rounded-3";}
+                <!-- 10rem => 160px -->
+                <!-- 12rem => 192px -->
+                <!-- 15rem => 240px -->
+                <!-- @{string score_card_style_options = "width: 10rem; max-width: 12rem";} -->
+                @{string score_card_style_options = "width: 12rem";}
                 @if (!MyMove)
                 {
                     border_decoration_your_go = "";
@@ -60,7 +69,7 @@ else
                     @if (currentGame.players[i].MyTurn)
                     {
                         j = i;
-                        <div class=@($"card mb-4 text-white bg-success {border_decoration_your_go}")>
+                        <div class=@($"card mb-4 text-white bg-success {border_decoration_your_go}") style=@($"{score_card_style_options}")>
                             <h5 class="card-header">@currentGame.players[i].Name</h5>
                             <h4 class="card-body" style="text-align: right; font-weight: bold;">@currentGame.players[i].Score</h4>
                         </div>
@@ -71,7 +80,7 @@ else
                 @for (int i = 0; i < currentGame.players.Count - 1; i++)
                 {
                     j = (j + 1) % currentGame.players.Count;
-                    @if (currentGame.players[j].Name == myEmail)
+                    @if (currentGame.players[j].Name == myName)
                     {
                         border_decoration_track_me = "border border-2 border-warning rounded-3";
                     }
@@ -80,7 +89,7 @@ else
                         border_decoration_track_me = "";
                     }
                     opacity -= 25;
-                    <div class=@($"card mb-4 text-black bg-secondary bg-opacity-{opacity} {border_decoration_track_me}")>
+                    <div class=@($"card mb-4 text-black bg-secondary bg-opacity-{opacity} {border_decoration_track_me}") style=@($"{score_card_style_options}")>
                         <h6 class="card-header">@currentGame.players[j].Name</h6>
                         <h5 class="card-body" style="text-align: right;">@currentGame.players[j].Score</h5>
                     </div>
@@ -88,7 +97,7 @@ else
             </div>
 
             <!-- Game board in the middle -->
-            <div class="col">
+            <div class="col-auto">
                 <div class="game" id="game">
                     <div class="game-element-container">
                         <div class="game-board">
@@ -103,92 +112,31 @@ else
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Previous moves and scores on the right -->
-            <div class="col">
-                @for (int i = currentGame.RecentMoves.Count - 1; i >= 0; i--)
-                {
-                    <!-- 'who' will only contain a name if 'action' is "played", "passed", "swapped" or "won"
-                    otherwise it will contain "Game" and 'action' will contain "resigned" or "drawn" -->
-                    string who = currentGame.RecentMoves[i].Split(' ')[0];
-                    string action = currentGame.RecentMoves[i].Split(' ')[1];
-                    @if (action == "played")
-                    {
-                        <div class="card mb-1 text-black bg-primary bg-opacity-50">
-                            <h6 class="card-header">@who</h6>
-                            <div class="card-body">@string.Join(" ", currentGame.RecentMoves[i].Split(' ')[1..^2])</div>
-                            <div class="card-footer" style="text-align: right; font-weight: bold; font-style: italic;">Score : @currentGame.RecentMoves[i].Split(' ')[^1]</div>
-                        </div>
-                    }
-                    else if (action == "won")
-                    {
-                        <div class="card mb-1 text-white bg-primary">
-                            <h6 class="card-header">@who</h6>
-                            <div class="card-body">Won the game</div>
-                        </div>
-                    }
-                    else if (action == "passed")
-                    {
-                        <div class="card mb-1 text-black bg-warning">
-                            <h6 class="card-header">@who</h6>
-                            <div class="card-body">Passed</div>
-                        </div>
-                    }
-                    else if (action == "swapped")
-                    {
-                        <div class="card mb-1 text-black bg-warning">
-                            <h6 class="card-header">@who</h6>
-                            <div class="card-body">Swapped tiles</div>
-                        </div>
-                    }
-                    else if (action == "resigned")
-                    {
-                        <div class="card mb-1 text-white bg-danger">
-                            <div class="card-body">Resigned</div>
-                        </div>
-                    }
-                    else if (action == "drawn")
-                    {
-                        <div class="card mb-1 text-white bg-secondary">
-                            <div class="card-body">Match drawn</div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="card mb-1 text-white bg-dark">
-                            <div class="card-body">? Unknown action ?</div>
-                        </div>
-                    }
-                }
-            </div>
-        </div>
-
-        <!-- The owl, player tile rack and tile bag -->
-        <div class="row">
-            <div>&nbsp;</div>
-            <div class="col">
-                <p>&nbsp;</p>
-            </div>
-            <div class="col">
-                <div class="game-element-container">
-                    <div class="player-tiles">
+                <!-- The owl, player tile rack and tile bag -->
+                <div class="game-play-container" id="game-play-row">
+                    <div>
+                        @{string owl_is = "invisible";}
                         @if (!MyMove && currentMoveGameDto != null)
                         {
-                            <button class="professor-owl" @onclick=ShowProfessorAdvisor>
-
-                            </button>
+                            owl_is = "visible";
                         }
+                        <div class=@($"{owl_is}")>
+                            <button class="professor-owl" @onclick=ShowProfessorAdvisor/>
+                        </div>
+                    </div>
+
+                    <div class="player-tiles">
                         @if (showProfessorDialog)
                         {
-                            <div class="professor-dialog">
+                            <div class="professor-dialog-new">
                                 <table>
                                     <tr>
                                         <td rowspan="2">
-                                            <img src="/images/ProfessorOwl2.png" class="professor-icon" />
+                                            <img src="/images/ProfessorOwl2.png" class="professor-icon"/>
                                         </td>
                                         <td class="text-center">
-                                            @professorMessage <br />
+                                            @professorMessage <br/>
                                         </td>
                                     </tr>
                                     <tr>
@@ -202,73 +150,128 @@ else
                                 </table>
                             </div>
                         }
-                        <button @onclick=Shuffle disabled="@DisabledShuffle()">Shuffle</button>
-                        @for (int i = 0; i < TilesInRack.Count; i++)
+                        else
                         {
-                            var index = i;
+                            <button @onclick=Shuffle disabled="@DisabledShuffle()">Shuffle</button>
 
-                            <UITile @key="TilesInRack[index].ID" TilePiece="TilesInRack[index]"></UITile>
-                        }
-                        <div class="tile-bag-area">
-                            <div class="tile-bag">
-                                @currentGame.TileBag.Inventory.Count
+                            @for (int i = 0; i < TilesInRack.Count; i++)
+                            {
+                                var index = i;
+                                <UITile @key="TilesInRack[index].ID" TilePiece="TilesInRack[index]"></UITile>
+                            }
+
+                            <div class="tile-bag-area">
+                                <div class="tile-bag">
+                                    @currentGame.TileBag.Inventory.Count
+                                </div>
                             </div>
-                        </div>
+                        }
                     </div>
                 </div>
-            </div>
-            <div class="col">
-                <p>&nbsp;</p>
-            </div>
-        </div>
 
-        <!-- Action buttons -->
-        <!-- <div class="information-buttons"> -->
-        <div class="row">
-            <div>&nbsp;</div>
-            <div class="col">
-                <p>&nbsp;</p>
-            </div>
-            <div class="col">
-                <!-- <div class="game-element-container"> -->
-                    <!-- <div class="information-buttons"> <!-- mt-4 mb-2"> -->
-                        @if (!MyMove && MyGamesList.NextUnplayedGameId() > 0)
-                        {
-                            <button class="next-game-nudge" @onclick=NextUnplayedGame>Next Game</button>
-                        }
-
-                        @if (currentGame.FinalGameStatus == null)
-                        {
-                            @if (IsSwapping)
+                <!-- Action buttons -->
+                <div class="action-buttons-container" id="action-buttons-row">
+                    @if (!showProfessorDialog)
+                    {
+                        <div class="action-buttons-container">
+                            @if (!MyMove && MyGamesList.NextUnplayedGameId() > 0)
                             {
-                                <span>(Exchange): Select tiles </span>
-                                <button @onclick=StopSwap disabled="@Disabled()">Cancel</button>
-                                <button @onclick=DoSwap disabled="@Disabled(SwappingTiles.Count == 0 || (SwappingTiles.Count > currentGame.TileBag.Inventory.Count))">Swap</button>
-
+                                <button class="next-game-nudge" @onclick=NextUnplayedGame>Next Game</button>
                             }
-                            else if (WordInPlay.Count == 0)
+
+                            @if (currentGame.FinalGameStatus == null)
                             {
-                                <button @onclick=Pass disabled="@Disabled(!MyMove)">Pass</button>
-                                <button @onclick=StartSwap disabled="@Disabled(!MyMove || !CanSwap)">Exchange</button>
+                                @if (IsSwapping)
+                                {
+                                    <span>(Exchange): Select tiles </span>
+                                    <button @onclick=StopSwap disabled="@Disabled()">Cancel</button>
+                                    <button @onclick=DoSwap disabled="@Disabled(SwappingTiles.Count == 0 || (SwappingTiles.Count > currentGame.TileBag.Inventory.Count))">Swap</button>
+
+                                }
+                                else if (WordInPlay.Count == 0)
+                                {
+                                    <button @onclick=Pass disabled="@Disabled(!MyMove)">Pass</button>
+                                    <button @onclick=StartSwap disabled="@Disabled(!MyMove || !CanSwap)">Exchange</button>
+                                }
+                                else
+                                {
+                                    <button @onclick=Play disabled="@Disabled(WordInPlay.Count==0 || !validMove)">Play</button>
+                                    <button @onclick=Recall disabled="@Disabled(WordInPlay.Count==0)">Recall</button>
+                                }
+                                <button @onclick=Resign disabled="@Disabled()">Resign</button>
                             }
                             else
                             {
-                                <button @onclick=Play disabled="@Disabled(WordInPlay.Count==0 || !validMove)">Play</button>
-                                <button @onclick=Recall disabled="@Disabled(WordInPlay.Count==0)">Recall</button>
+                                <button @onclick=Rematch disabled="@IsSubmitting">Rematch</button>
                             }
-                            <button @onclick=Resign disabled="@Disabled()">Resign</button>
-                        }
-                        else
-                        {
-                            <button @onclick=Rematch disabled="@IsSubmitting">Rematch</button>
-                        }
 
-                        <button class="@ChatAlert()" @onclick=ShowChat>Chat</button>
-                    <!-- </div> -->
-                <!-- </div> -->
+                            <button class="@ChatAlert()" @onclick=ShowChat>Chat</button>
+                        </div>
+                    }
+                </div>
             </div>
-            <div class="col">
-                <p>&nbsp;</p>
+
+            <!-- Previous moves and scores on the right -->
+            <!-- is not displayed on insufficiently wide screens -->
+            <div class="col-auto d-none d-xxl-block">
+                <!-- 15rem => 240px -->
+                <!-- 20rem => 320px -->
+                <!-- @{string moves_card_style_options = "width: 15rem; max-width: 20rem";} -->
+                @{string moves_card_style_options = "width: 16rem";}
+                @for (int i = currentGame.RecentMoves.Count - 1; i >= 0; i--)
+                {
+                    <!-- 'who' will only contain a name if 'action' is "played", "passed", "swapped" or "won"
+                    otherwise it will contain "Game" and 'action' will contain "resigned" or "drawn" -->
+                    string who = currentGame.RecentMoves[i].Split(' ')[0];
+                    string action = currentGame.RecentMoves[i].Split(' ')[1];
+                    @if (action == "played")
+                    {
+                        <div class="card mb-1 text-black bg-primary bg-opacity-50" style=@($"{moves_card_style_options}")>
+                            <h6 class="card-header">@who played...</h6>
+                            <div class="card-body">@string.Join(" ", currentGame.RecentMoves[i].Split(' ')[2..^2])</div>
+                            <div class="card-footer" style="text-align: right; font-weight: bold; font-style: italic;">Score : @currentGame.RecentMoves[i].Split(' ')[^1]</div>
+                        </div>
+                    }
+                    else if (action == "won")
+                    {
+                        <div class="card mb-1 text-white bg-primary" style=@($"{moves_card_style_options}")>
+                            <h6 class="card-header">@who</h6>
+                            <div class="card-body">Won the game</div>
+                        </div>
+                    }
+                    else if (action == "passed")
+                    {
+                        <div class="card mb-1 text-black bg-warning" style=@($"{moves_card_style_options}")>
+                            <h6 class="card-header">@who</h6>
+                            <div class="card-body">Passed</div>
+                        </div>
+                    }
+                    else if (action == "swapped")
+                    {
+                        <div class="card mb-1 text-black bg-warning" style=@($"{moves_card_style_options}")>
+                            <h6 class="card-header">@who</h6>
+                            <div class="card-body">Swapped tiles</div>
+                        </div>
+                    }
+                    else if (action == "resigned")
+                    {
+                        <div class="card mb-1 text-white bg-danger" style=@($"{moves_card_style_options}")>
+                            <div class="card-body">Resigned</div>
+                        </div>
+                    }
+                    else if (action == "drawn")
+                    {
+                        <div class="card mb-1 text-white bg-secondary" style=@($"{moves_card_style_options}")>
+                            <div class="card-body">Match drawn</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="card mb-1 text-white bg-dark" style=@($"{moves_card_style_options}")>
+                            <div class="card-body">? Unknown action ?</div>
+                        </div>
+                    }
+                }
             </div>
         </div>
 
@@ -335,6 +338,7 @@ else
     // Get access to claims
     [CascadingParameter] private Task<AuthenticationState> authenticationStateTask { get; set; }
     private string myEmail;
+    private string myName;
 
 
 
@@ -385,8 +389,6 @@ else
         _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", @Assets["./scripts/DragAndDrop.js"]);
     }
 
-
-
     protected override async Task OnParametersSetAsync()
     {
         var authState = await authenticationStateTask;
@@ -399,9 +401,9 @@ else
         gameDisplayReference = this;
         await LoadGameAsync();
         var nPlayerRows = (currentGame.Players.Count() + 1) / 2;
+        myName = FindSelf(currentGame).Name;
+        Console.WriteLine($"myName={myName}");
         await _jsModule.InvokeVoidAsync("InitializeDragAndDrop", nPlayerRows);
-
-
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -538,13 +540,21 @@ else
         Console.WriteLine($"Drop {dragId} onto {dropId}");
         if (gameDisplayReference.IsSwapping) return;
 
+        var handled = false;
         if (dragId.StartsWith("Tile") && dropId.StartsWith("Tile"))
         {
             await gameDisplayReference.HandleDropTileOnTile(dragId, dropId);
+            handled = true;
         }
         else if (dragId.StartsWith("Tile") && dropId.StartsWith("Square"))
         {
             await gameDisplayReference.HandleDropTileOnSquare(dragId, dropId);
+            handled = true;
+        }
+
+        if (!handled)
+        {
+            Console.WriteLine($"Unhandled drop: {dragId} onto {dropId}");
         }
 
         gameDisplayReference.EvaluateMove();
@@ -563,7 +573,15 @@ else
 
         var sourceRackIndex = FindTileIndexInRack(dragId); // If starting from rack
         var squareInfo = FindSquareInfo(dropId);
-        if (squareInfo == null) return;
+        if (squareInfo == null)
+        {
+            Console.WriteLine($"HandleDropTileOnSquare : Unable to find square info for dragId: {dragId}, dropId: {dropId}");
+            // perhaps absence of the following was causing the large rack tile to be placed
+            // on the board when it should really have been returned to the rack and/or not rendered at all
+            //actionsToRunAfterRender.Add((JS_SetTileForDrop, dragId));  // Re-enable for dropped tile
+            return;
+        }
+
         var targetSquare = currentGame.PlayingBoard.Get(squareInfo.Value.row, squareInfo.Value.col);
 
         if (sourceRackIndex >= 0)
@@ -601,12 +619,8 @@ else
                 targetSquare.Tile = tileInPlay.Tile;
                 tileInPlay.BoardPosition = targetSquare.BoardPosition;   // Update board position for WordInPlay
                 actionsToRunAfterRender.Add((JS_SetTileForDrop, dragId));  // Re-enable for dropped tile
-
             }
-
-
         }
-
     }
 
     private (int row, int col)? FindSquareInfo(string squareId)
@@ -1026,7 +1040,7 @@ else
             int randIndex = rnd.Next(adjectives.Count);
             string superlative = adjectives[randIndex];
 
-            return $"{superlative}!  I couldn't have done better myself!";
+            return $"{superlative}! I couldn't have done better myself.";
         }
 
         displayComputerPlay = true;
@@ -1036,17 +1050,17 @@ else
             int randIndex = rnd.Next(adjectives.Count);
             string superlative = adjectives[randIndex];
 
-            return $"{superlative}!  You did even better than I could have!";
+            return $"{superlative}! You did even better than I could have.";
         }
 
-        var advice = "Not bad!";
+        var advice = "Not bad -";
         var scoreDiff = computerScore - playerScore;
         if (scoreDiff < 5)
         {
-            advice = "Not bad!";
+            advice = "Good effort -";
         } else if (scoreDiff < 10)
         {
-            advice = "Ok -";
+            advice = "Not bad -";
         } else
         {
             advice = "";
@@ -1185,7 +1199,17 @@ else
     // Passed to the GameViewModel, which uses it to prompt user for a letter for a blank tile
     private async Task<char> GetBlankTileLetter()
     {
-        var result = await Modal.Show<BlankLetterSelector>("Select a blank tile letter").Result;
+    	var options = new ModalOptions()
+    	{
+	    	Size = ModalSize.Large,
+
+            Position = ModalPosition.Custom,
+            // borrow the positioning settings from the new game modal which
+            // does seem to work to center the dialog on the viewing area
+            PositionCustomClass = "new-game-position"
+	    };
+
+        var result = await Modal.Show<BlankLetterSelector>("Select a blank tile letter", options).Result;
         if (result.Cancelled)
         {
             return '#';
