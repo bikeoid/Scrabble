@@ -1,7 +1,4 @@
-﻿
-
-
-// Function to adapt to browser layout:
+﻿// Function to adapt to browser layout:
 //  Square game board on maximized desktop window should not create vertical scrollbar
 //  Square game board on portrait mobile layout should extend to left and right margin
 //     Landscape mobile not implemented
@@ -11,71 +8,119 @@ var playerRows = 1;
 function handleWindowSize() {
 
     var gameArea = document.getElementById('game');
-    if (!gameArea) return;
-    var scoreArea = document.getElementById('scoreboard');
+    if (!gameArea)
+    {
+        return;
+    }
 
     var browserHeight = window.innerHeight;
     var browserWidth = window.innerWidth;
-
-    var extraVerticalSpace = ExtraVerticalSpace + (browserHeight / 9); // Compensate for rack and buttons
-    if (playerRows > 1) extraVerticalSpace += 40;
+    console.log("Browser dimensions:")
+    console.log("   width=" + browserWidth + ", height=" + browserHeight);
 
     var sidebarWindow = document.getElementById('sidebar');
+    console.log("Sidebar dimensions:");
+    console.log("   clientWidth=" + sidebarWindow.clientWidth + ", clientHeight=" + sidebarWindow.clientHeight);
+    console.log("   offsetWidth=" + sidebarWindow.offsetWidth + ", offsetHeight=" + sidebarWindow.offsetHeight);
 
-    document.getElementsByTagName("body")[0].style.marginLeft = "1px";
-    document.getElementsByTagName("body")[0].style.marginRight = "1px";
+    // game element
+    //var gameWindow = document.getElementById('game');
+    //var positionInfo = gameWindow.getBoundingClientRect();
+    // dimensions of game element
+    //var gameHeight = Math.floor(positionInfo.height);
+    //var gameWidth = Math.floor(positionInfo.width);
+    // or...
+    //var gameHeight = gameWindow.offsetHeight;
+    //var gameWidth = gameWindow.offsetWidth;
+    //console.log("Game dimensions:")
+    //console.log("   width=" + gameWidth + ", height=" + gameHeight);
 
-    // Game area must exclude sidebar area
+    var gamePlayRow = document.getElementById('game-play-row');
+    var gamePlayRowHeight = gamePlayRow.offsetHeight;
+    var actionButtonsRow = document.getElementById('action-buttons-row');
+    var actionButtonsRowHeight = actionButtonsRow.offsetHeight;
+    console.log("Row heights:")
+    console.log("   gamePlayRowHeight=" + gamePlayRowHeight + ", actionButtonsRowHeight=" + actionButtonsRowHeight);
+
+    if (browserWidth >= browserHeight)
+    {
+        console.log("~ Landscape mode detected ~");
+    }
+    else
+    {
+        console.log("~ Portrait mode detected ~");
+    }
+
     var newHeight = browserHeight;
     var newWidth = browserWidth;
-
-    if (browserWidth <= (sidebarWindow.clientWidth + 50)) {
-        // Sidebar is top-bar
-        newHeight = browserHeight - sidebarWindow.offsetHeight;
+    if (newWidth <= (sidebarWindow.clientWidth + 50)) {
+        // Sidebar is top-bar so adjust the height
+        newHeight -= sidebarWindow.offsetHeight;
     } else {
-        // Sidebar is side-bar
-        newWidth = browserWidth - sidebarWindow.offsetWidth;
+        // Sidebar is side-bar so adjust the width
+        newWidth -= sidebarWindow.offsetWidth;
     }
 
-    var newStyle = newWidth;
-    var boardWidth = newWidth;
-    if (newWidth < (newHeight - extraVerticalSpace)) {
-        // Portrait
-        boardWidth = newWidth - 4;
-        newStyle = boardWidth + "px";
-        gameArea.style.height = newStyle;
-        gameArea.style.width = newStyle;
-        gameArea.style.marginLeft = "0px";
-        gameArea.style.marginRight = "0px";
+    // adjust height available for the game board by allocating 20% of
+    // the browser window height for the tiles and buttons
+    var RackAndButtonsHeight = Math.floor(0.20 * newHeight);
+    //newHeight -= Math.max(RackAndButtonsHeight);
+    //newHeight -= (gamePlayRowHeight + actionButtonsRowHeight)
+    newHeight -= Math.max(RackAndButtonsHeight, 2 * (gamePlayRowHeight + actionButtonsRowHeight));
 
-        scoreArea.style.width = newStyle;
-        scoreArea.style.marginLeft = "0px";
-        scoreArea.style.marginRight = "0px";
+    // adjust width for the player scores and recent moves
+    //var PlayerScoresAndRecentMovesWidth = Math.floor(0.25 * newWidth);
+    //var PlayerScoresAndRecentMovesWidth = 192 + 320;
+    //newWidth -= PlayerScoresAndRecentMovesWidth;
 
-    } else {
-        //landscape
-        boardWidth = newHeight - extraVerticalSpace;
-        newStyle = boardWidth + "px";
-        gameArea.style.height = newStyle;
-        gameArea.style.width = newStyle;
-        gameArea.style.marginLeft = "auto";
-        gameArea.style.marginRight = "auto";
+    console.log("new width=" + newWidth + ", new height=" + newHeight);
 
-        scoreArea.style.width = newStyle;
-        scoreArea.style.marginLeft = "auto";
-        scoreArea.style.marginRight = "auto";
-    }
-    var pixelWidth = Math.floor(boardWidth / 15) - 1;
+    // set the length of the side of the square game board
+    //var boardSide = Math.min(newWidth, newHeight);
+    //var boardSide = Math.min(gameWidth, gameHeight);
+    var boardSide = newHeight;
+    console.log("boardSide=" + boardSide);
+
+    gameArea.style.height = boardSide + "px";
+    gameArea.style.width = boardSide + "px";
+
+    // i wonder what all the following variables are for
+    // some are fairly obvious but maybe some of the less obvious
+    // ones might be the reason for the double tile drop issue
+    // perhaps due to a rounding error in a size causing issues with
+    // cursor position events during drag and drop ?
+    // when triggered, two tiles are dropped onto adjacent cells of the
+    // board and the large tile being dragged from the tile rack is not
+    // cleared down
+    // perhaps the innerSquareSize is too close in dimensions to the
+    // squareSize, so let's reduce by 2 pixels rather than 1 and see what happens
+    // might make drag and drop less responsive/accurate ?
+    var pixelWidth = Math.floor(boardSide / 15) - 1;
+
     var squareSize = pixelWidth + "px";
-    var innerSquareSize = (pixelWidth - 1) + "px";
+    var innerSquareSize = (pixelWidth - 2) + "px";
+
+    // next three relate to the DL,DW,TL,TW squares
     var overscanPixels = Math.round(pixelWidth * 0.14);
     var oversizeMarker = (pixelWidth + overscanPixels * 2) + "px";
     var overscanSize = -overscanPixels + "px";
+
     var tileFontSize = ((pixelWidth * 7) / 10) + "px";
     var tileScoreFontSize = ((pixelWidth * 4) / 10) + "px";
     var squareFontSize = ((pixelWidth * 5) / 10) + "px";
-    var tileRackSize = (pixelWidth + Math.floor((pixelWidth * 5) / 10)) + "px";
-    //console.log('Browser width=' + browserWidth + ', sidebarWidth = ' + sidebarWindow.clientWidth + ', new height = ' + newHeight + ", new width=" + newWidth + ", boardWidth=" + boardWidth + ", square size=" + squareSize + ", oversize=" + oversizeMarker);
+
+    // make tile rack size slightly smaller as the tile rack area is slightly
+    // wider than the board so when a tile is moved to be placed it causes the
+    // board size to be recalculated! (also it looks neater - no overhang)
+    // previously it was (pixelWidth * 5) / 10
+    var tileRackSize = (pixelWidth + Math.floor((pixelWidth * 4) / 10)) + "px";
+
+    console.log("pixelWidth=" + pixelWidth + ", (x 0.14)=" + pixelWidth * 0.14);
+    console.log("squareSize=" + squareSize + ", innerSquareSize=" + innerSquareSize);
+    console.log("overscanPixels=" + overscanPixels + ", oversizeMarker=" + oversizeMarker + ", overscanSize=" + overscanSize);
+    console.log("tileFontSize=" + tileFontSize + ", tileScoreFontSize=" + tileScoreFontSize + ", squareFontSize=" + squareFontSize);
+    console.log("tileRackSize=" + tileRackSize);
+
     document.documentElement.style.setProperty('--square-space', squareSize);
     document.documentElement.style.setProperty('--inner-square-size', innerSquareSize);
     document.documentElement.style.setProperty('--oversize-square-size', oversizeMarker);
@@ -84,10 +129,7 @@ function handleWindowSize() {
     document.documentElement.style.setProperty('--tile-score-font-size', tileScoreFontSize);
     document.documentElement.style.setProperty('--square-font-size', squareFontSize);
     document.documentElement.style.setProperty('--tile-rack-size', tileRackSize);
-
-
 }
-
 
 
 /* Javascript functions to assist with HTML drag/drop operations.

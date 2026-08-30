@@ -28,7 +28,7 @@ a.game-link:hover {
 }
 
     a.game-link:hover .game-card {
-        transform: scale(1.04);
+        transform: scale(1.03);
     }
 
 
@@ -88,10 +88,6 @@ text-center {
         width: 100%;
     }
 
-.information-buttons {
-    margin-left: auto;
-    margin-right: auto;
-}
 
 .bm-content {
     overflow-y: auto;
@@ -159,18 +155,13 @@ textarea {
     height: var(--tile-rack-size, 5vw);
 }
 
-.professor-dialog {
-    position: absolute;
-    /*left: 0; */
-    top: 0;
-    height: var(--tile-rack-size, 5vw);
-    width: 50vw;
-    margin-left: calc(-30vw + 50%);
-    z-index: 1000;
-    background-color: lightgray;
+.professor-dialog-new {
+    display: flex;
+    background-color: lightblue;
     color: black;
+    border: 1px;
+    padding: 8px;
 }
-
 
 .tile-bag-area {
     display: inline-flex;
@@ -187,6 +178,19 @@ textarea {
     display: flex;
     justify-content: center;
     flex-direction: column;
+}
+
+.game-play-container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.action-buttons-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 12px;
 }
 
 .square-row {
@@ -354,6 +358,7 @@ textarea {
     width: var(--tile-rack-size, 5vw);
     max-width: var(--tile-rack-size, 5vw);
     height: var(--tile-rack-size, 5vw);
+    margin: 2px;
 }
 
 .tile-x-out {
@@ -381,77 +386,37 @@ textarea {
     line-height: 1.5em;
 }
 
-.blank-tile-selection {
-    width: 2.8vw;
-    height: 2.8vw;
+.blank-letter-selector {
+    display: inline-block;
+    height: var(--square-space, 3vw);
+    width: var(--square-space, 3vw);
     background-image: url("/Images/woodknots.jpg");
     background-size: 100% 100%;
     border-radius: .5vw;
     color: darkred;
     text-align: center;
-    font-size: 1.9vw;
-    font-weight: bolder;
+    font-size: var(--tile-font-size, 0.9vw);
+    font-weight: bold;
     font-style: normal;
     cursor: pointer;
     user-select: none;
+    margin: 3px;
+}
+
+.blank-letter-selector:hover {
+    color: red;
 }
 
 .scoreboard {
+    background-color: lightblue;
     border: 1px black solid;
-    /* width: 400px;  auto adjusted by Javascript */
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     margin-left: auto;
     margin-right: auto;
 }
 
-.left-players {
-    text-align: left;
-    float: left;
-}
-
-.right-players {
-    text-align: right;
-    float: right;
-}
-
-.player-active-turn {
-    background-color: greenyellow;
-}
-
-
-.human-message {
-    background-color: lightblue;
-}
-
-.blank-letter-modal-size {
-    width: 30vw;
-    height: 25vw;
-    max-width: 90%;
-}
-
-.blank-letter-selector-grid {
-    display: grid;
-    grid-template-columns: repeat(8, 2.9vw); /* 8 tiles per row */
-    grid-gap: 0.1vw;
-    justify-content: start; /* last row left-justified */
-}
-
-.blank-letter-selector-tile {
-    width: 2.8vw;
-    height: 2.8vw;
-    background-image: url("/Images/woodknots.jpg");
-    background-size: 100% 100%;
-    text-align: center;
-    font-size: 1.8vw;
-    font-weight: bold;
-    cursor: pointer;
-    user-select: none;
-}
-
-    .blank-letter-selector-tile:hover {
-        background-color: #e8dcbf;
-    }
+/* removed redundant entries from here */
 
 
 /*for player tile row */
@@ -497,11 +462,8 @@ textarea {
 
 .game {
     text-align: center;
-    /*width: 400px;
-    height: 400px;*/
     margin-left: auto;
     margin-right: auto;
-    /*border: 1px black solid;*/
 }
 
     .game .game-element-container {

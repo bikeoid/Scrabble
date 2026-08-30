@@ -8,6 +8,10 @@
         } else
         {
             background = "secondary";
+            if (String.IsNullOrEmpty(PlayerGame.NextPlayerName))
+            {
+                background = "dark";
+            }
         }
     } else if (PlayerGame.IWon)
     {
