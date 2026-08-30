@@ -5,6 +5,8 @@ namespace Scrabble.Core.Types
     public interface ITurnImplementor
     {
         abstract void PerformPass();
+        
+        abstract void PerformResign();
 
         abstract void PerformDumpLetters(DumpLetters dumpLetters);
 

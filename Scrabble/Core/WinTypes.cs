@@ -8,6 +8,8 @@ namespace Scrabble.Core.Types
 {
     public class WinTypes
     {
-        public enum WinType {None, Win, Draw, Resign};
+        // Resign no longer applicable - but need to keep as it is used
+        // to display historical outcomes on the list of played games
+        public enum WinType { None, Win, Draw, Resign};
     }
 }

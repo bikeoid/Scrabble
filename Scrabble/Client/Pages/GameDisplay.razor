@@ -66,13 +66,13 @@ else
                     {
                         border_decoration_your_go = "";
                     }
-                    <!-- Display the current player at the top with a green background -->
+                    <!-- Display the current player at the top with a blue background -->
                     @for (int i = 0; i < currentGame.players.Count; i++)
                     {
                         @if (currentGame.players[i].MyTurn)
                         {
                             j = i;
-                            <div class=@($"card mb-4 text-white bg-success {border_decoration_your_go}") style=@($"{score_card_style_options}")>
+                            <div class=@($"card mb-4 text-white bg-info {border_decoration_your_go}") style=@($"{score_card_style_options}")>
                                 <h5 class="card-header">@currentGame.players[i].Name</h5>
                                 <h4 class="card-body" style="text-align: right; font-weight: bold;">@currentGame.players[i].Score</h4>
                             </div>
@@ -91,11 +91,25 @@ else
                         {
                             border_decoration_track_me = "";
                         }
-                        opacity -= 25;
-                        <div class=@($"card mb-4 text-black bg-secondary bg-opacity-{opacity} {border_decoration_track_me}") style=@($"{score_card_style_options}")>
-                            <h6 class="card-header">@currentGame.players[j].Name</h6>
-                            <h5 class="card-body" style="text-align: right;">@currentGame.players[j].Score</h5>
-                        </div>
+                        @if (currentGame.players[j].IsActive)
+                        {
+                            opacity -= 25;
+                            <div class=@($"card mb-4 text-black bg-secondary bg-opacity-{opacity} {border_decoration_track_me}") style=@($"{score_card_style_options}")>
+                                <h6 class="card-header">@currentGame.players[j].Name</h6>
+                                <h5 class="card-body" style="text-align: right;">@currentGame.players[j].Score</h5>
+                            </div>
+                        }
+                    }
+                    <!-- Lastly display the inactive players in red -->
+                    @for (int i = 0; i < currentGame.players.Count - 1; i++)
+                    {
+                        @if (!currentGame.players[i].IsActive)
+                        {
+                            <div class="card mb-4 text-white bg-danger" style=@($"{score_card_style_options}")>
+                                <h6 class="card-header">@currentGame.players[i].Name</h6>
+                                <h5 class="card-body" style="text-align: right;">Resigned</h5>
+                            </div>
+                        }
                     }
                 }
                 else
@@ -103,34 +117,42 @@ else
                     <!-- game is over -->
                     <!-- update the player score cards because the recent moves -->
                     <!-- may not be being displayed -->
+                    <!-- put the winner at the top of the list -->
                     @if (currentGame.FinalGameStatus.Win_Type == WinTypes.WinType.Win)
                     {
-                        @for (int i = 0; i < currentGame.players.Count; i++)
+                        int shown_counter = 0;
+                        bool winner_shown = false;
+                        int i = 0;
+                        @while (shown_counter < currentGame.players.Count)
                         {
-                            if (currentGame.players[i].Name == currentGame.FinalGameStatus.WinningPlayerName)
+                            if (currentGame.players[i].Name == currentGame.FinalGameStatus.WinningPlayerName && !winner_shown)
                             {
-                                <div class=@($"card mb-4 text-white bg-primary") style=@($"{score_card_style_options}")>
-                                    <h5 class="card-header">@currentGame.players[i].Name won</h5>
+                                winner_shown = true;
+                                shown_counter++;
+                                <div class=@($"card mb-4 text-white bg-success") style=@($"{score_card_style_options}")>
+                                    <h5 class="card-header">@currentGame.players[i].Name</h5>
                                     <h4 class="card-body" style="text-align: right; font-weight: bold;">@currentGame.players[i].Score</h4>
                                 </div>
                             }
-                            else
+                            i = (i + 1) % currentGame.players.Count;
+                            if (winner_shown)
                             {
+                                shown_counter++;
                                 <div class=@($"card mb-4 text-white bg-danger") style=@($"{score_card_style_options}")>
                                     <h5 class="card-header">@currentGame.players[i].Name</h5>
-                                    <h4 class="card-body" style="text-align: right; font-weight: bold;">@currentGame.players[i].Score</h4>
+                                    <h4 class="card-body" style="text-align: right;">@currentGame.players[i].Score</h4>
                                 </div>
                             }
                         }
                     }
                     else
                     {
-                        <!-- this could be a draw or due to a player resignation -->
+                        <!-- a draw -->
                         @for (int i = 0; i < currentGame.players.Count; i++)
                         {
-                            <div class=@($"card mb-4 text-black bg-warning") style=@($"{score_card_style_options}")>
+                            <div class=@($"card mb-4 text-white bg-primary") style=@($"{score_card_style_options}")>
                                 <h5 class="card-header">@currentGame.players[i].Name</h5>
-                                <h4 class="card-body" style="text-align: right; font-weight: bold;">@currentGame.players[i].Score</h4>
+                                <h4 class="card-body" style="text-align: right;">@currentGame.players[i].Score</h4>
                             </div>
                         }
                     }
@@ -261,8 +283,8 @@ else
                 @{string moves_card_style_options = "width: 16rem";}
                 @for (int i = currentGame.RecentMoves.Count - 1; i >= 0; i--)
                 {
-                    <!-- 'who' will only contain a name if 'action' is "played", "passed", "swapped" or "won"
-                    otherwise it will contain "Game" and 'action' will contain "resigned" or "drawn" -->
+                    <!-- 'who' will only contain a name if 'action' is "played", "resigned", "passed", "swapped" or "won"
+                    otherwise it will contain "Game" and 'action' will contain "drawn" -->
                     string who = currentGame.RecentMoves[i].Split(' ')[0];
                     string action = currentGame.RecentMoves[i].Split(' ')[1];
                     @if (action == "played")
@@ -275,7 +297,7 @@ else
                     }
                     else if (action == "won")
                     {
-                        <div class="card mb-1 text-white bg-primary" style=@($"{moves_card_style_options}")>
+                        <div class="card mb-1 text-white bg-success" style=@($"{moves_card_style_options}")>
                             <h6 class="card-header">@who</h6>
                             <div class="card-body">Won the game</div>
                         </div>
@@ -297,6 +319,7 @@ else
                     else if (action == "resigned")
                     {
                         <div class="card mb-1 text-white bg-danger" style=@($"{moves_card_style_options}")>
+                            <h6 class="card-header">@who</h6>
                             <div class="card-body">Resigned</div>
                         </div>
                     }

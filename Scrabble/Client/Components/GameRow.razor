@@ -1,5 +1,6 @@
 ﻿@{
     string background = "danger";
+    string foreground = "white";
     if (PlayerGame.Active)
     {
         if (PlayerGame.MyMove)
@@ -24,7 +25,6 @@
         } else
         {
             background = "primary";
-           
         }
     }
             //PlayerGame. switch
@@ -38,7 +38,7 @@
 }
 
 <a class="game-link" href=@($"/game/{PlayerGame.GameId}")>
-    <div class=@($"game-card ml-3 card text-white bg-{background}")>
+    <div class=@($"game-card ml-3 card text-{foreground} bg-{background}")>
         <div class="card-body">
             @{string msg = $"Game {PlayerGame.GameId}";}
 
@@ -67,17 +67,16 @@
                         msg += $"{PlayerGame.WinnerName} won";
                     } else
                     {
-                        msg += $"outcome: {PlayerGame.Win_Type.ToString()}";
+                        msg += $"{PlayerGame.Win_Type.ToString()}";
                     }
                 }
             }
             <div>@msg</div>
 
-
             @{string sfx = "score"; string opmsg = "";}
             @for (int i = 0; i < PlayerGame.OppponentUserNames.Count; i++)
             {
-                opmsg += $"{PlayerGame.OppponentUserNames[i]} - {PlayerGame.OtherScores[i]}";
+                opmsg += $"{PlayerGame.OppponentUserNames[i]}: {PlayerGame.OtherScores[i]}";
                 if (i < PlayerGame.OppponentUserNames.Count - 1)
                 {
                     opmsg += ", ";
@@ -85,8 +84,9 @@
             }
             @if (PlayerGame.OppponentUserNames.Count > 1) sfx += "s";
 
-            <p style="margin :1em"><strong>Your score: @PlayerGame.MyScore</strong><br>
-            Opponent @sfx: @opmsg
+            <!-- cheeky use of MyUserName to convey if a user resigned -->
+            <p style="margin :1em"><strong>Your score: @PlayerGame.MyScore @PlayerGame.MyUserName</strong><br>
+            Opponent @sfx - @opmsg
             </p>
         </div>
     </div>

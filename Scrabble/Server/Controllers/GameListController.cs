@@ -98,26 +98,43 @@ namespace Scrabble.Server.Controllers
                 var gameStateDto = JsonConvert.DeserializeObject<GameStateDto>(game.GameState);
                 foreach (var playerGame in game.PlayerGames)
                 {
-
                     if (playerGame.PlayerId == requestingPlayer.PlayerId)
                     {
                         gameSummaryDto.MyScore = playerGame.PlayerScore;
-                        gameSummaryDto.MyUserName = requestingPlayer.Name;
+                        // MyUserName doesn't seem to be used for anything so hijack it so can indicate
+                        // requesting player resigned (in GameRow.razor)
+                        // was set to
+                        //gameSummaryDto.MyUserName = requestingPlayer.Name;
+                        gameSummaryDto.MyUserName = "";
+                        var referencedPlayer = gameStateDto.GamePlayerList.FirstOrDefault(p => p.PlayerId == playerGame.PlayerId);
+                        if (referencedPlayer != null)
+                        {
+                            if (referencedPlayer.ActiveFlag == "N") gameSummaryDto.MyUserName = "(Resigned)";
+                        }
                         gameSummaryDto.MyMove = playerGame.MyMove;
                     }
                     else
                     {
                         var name = playerGame.Player.Name;
-                        if (playerGame.Player.Name.Equals("Computer", StringComparison.OrdinalIgnoreCase))
+                        var referencedPlayer = gameStateDto.GamePlayerList.FirstOrDefault(p => p.PlayerId == playerGame.PlayerId);
+                        if (referencedPlayer != null)
                         {
-                            var referencedPlayer = gameStateDto.GamePlayerList.FirstOrDefault(p => p.PlayerId == playerGame.PlayerId);
-                            if (referencedPlayer != null)
+                            if (playerGame.Player.Name.Equals("Computer", StringComparison.OrdinalIgnoreCase))
                             {
                                 if (Enum.IsDefined(typeof(NewOpponent.Level), referencedPlayer.Skill))
                                 {
                                     var skillEnum = (NewOpponent.Level)referencedPlayer.Skill;
                                     name = $"Computer ({skillEnum})";
                                 }
+                            }
+                            else
+                            {
+                                // we're assuming the computer can't resign, which is probably reasonable
+                                // as it'll never get tired or need to go out for the day etc etc
+                                // it will just keep passing
+                                // ActiveFlag isn't set for historical games being deserialized for processing
+                                // so it will be blank. only set "Resigned" if flag is explicitly "N"
+                                if (referencedPlayer.ActiveFlag == "N") name += " (Resigned)";
                             }
                         }
                         gameSummaryDto.OppponentUserNames.Add(name);
@@ -134,7 +151,6 @@ namespace Scrabble.Server.Controllers
 
                 returnGames.Add(gameSummaryDto);
             }
-
 
             return Ok(returnGames);
         }

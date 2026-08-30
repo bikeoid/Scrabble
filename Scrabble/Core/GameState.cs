@@ -79,9 +79,13 @@ namespace Scrabble.Core.Types
         {
             this.CurrentPlayer.MyTurn = false;
             ++this.moveCount;
-            ++this.currentPlayerIndex;
-            if (this.currentPlayerIndex >= this.players.Count)
-                this.currentPlayerIndex = 0;
+
+            // move on to the next active player
+            do
+            {
+                this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.Count;
+            } while (!this.CurrentPlayer.IsActive);
+
             this.CurrentPlayer.MyTurn = true;
             this.CurrentPlayer.NotifyTurn((ITurnImplementor)this, lastMoveDetail);
         }
@@ -184,13 +188,34 @@ namespace Scrabble.Core.Types
         }
 
 
-
-
         void ITurnImplementor.PerformPass()
         {
             ++this.passCount;
             LastMoveResult = $"{this.CurrentPlayer.Name} passed";
             TrackRecentMoves();
+            LastMoveResult = "";
+        }
+        void ITurnImplementor.PerformResign()
+        {
+            CurrentPlayer.ActiveFlag = "N";
+            LastMoveResult = $"{CurrentPlayer.Name} resigned";
+            TrackRecentMoves();
+            LastMoveResult = "";
+
+            // place tiles back in the bag
+            List<Tile> returned_tiles = new List<Tile>();
+            foreach (Tile t in CurrentPlayer.Tiles)
+            {
+                returned_tiles.Add(t);
+            }
+            TileBag.Put(returned_tiles);
+            CurrentPlayer.Tiles.Clear();
+            // set the player score to 0 because it's possible they
+            // could resign but have a massive score and by the time the
+            // other players finish they might still not have reached it
+            // so a perverse outcome could occur where a resigned player
+            // could win
+            CurrentPlayer.Score = 0;
         }
 
         void ITurnImplementor.PerformDumpLetters(DumpLetters dl)
@@ -322,26 +347,44 @@ namespace Scrabble.Core.Types
             }
             else
             {
-                this.FinishGame(false);
+                this.FinishGame();
                 // moved the following call into FinishGame() because FinishGame() is also
                 // called from the NoMoveController when a player resigns
                 //TrackRecentMoves();
             }
-
-
         }
 
         public bool IsGameComplete()
         {
-            //a game of Scrabble is over when a player has 0 tiles, or each player has passed twice
+            // a game of Scrabble is over when
+            //    an active player has 0 tiles or,
+            //    each active player has passed twice or,
+            //    there is only 1 active player left (the others having resigned)
+            //       (is the computer considered and active player, and can it resign ?)
             foreach (var player in this.players)
             {
-                if (!player.HasTiles) return true;
+                if (player.IsActive && !player.HasTiles) return true;
             }
-            if (passCount == this.players.Count * 2) return true;
 
-            return (TileBag.IsEmpty && passCount == this.players.Count);
+            bool all_active_players_passed_twice = true;
+            foreach (var player in this.players)
+            {
+                if (player.IsActive && player.PlayerPasses < 2) all_active_players_passed_twice = false;
+            }
+            if (all_active_players_passed_twice) return true;
 
+            int active_player_count = 0;
+            foreach (var player in this.players)
+            {
+                if (player.IsActive) active_player_count++;
+            }
+            if (active_player_count == 1) return true;
+
+            // TODO not sure about how to change the following original return statement
+            // now a player can be inactive after resigning...
+            // ...surely we just return false at this point
+            //return (TileBag.IsEmpty && passCount == this.players.Count);
+            return false;
         }
 
         /// <summary>
@@ -351,19 +394,42 @@ namespace Scrabble.Core.Types
         /// <returns>List of winner(s)</returns>
         public List<Player> TallyGameResult()
         {
-            // Determine max pre-bonus score
+            var winners = new List<Player>();
 
+            // special case where there is only one active player left
+            // who then wins by default. don't adjust any scores because it could
+            // be the case that after adjustment the winner could have a score of less
+            // than 0 (imagine a rack with Z, Q, J, X, K still in it) and the last resigning
+            // player has had their score set to 0
+            int active_player_count = 0;
+            Player active_player = null;
+            foreach (Player p in this.players)
+            {
+                if (p.IsActive)
+                {
+                    if (active_player_count == 0) active_player = p;
+                    active_player_count++;
+                }
+            }
+            if (active_player_count == 1)
+            {
+                Console.WriteLine("There is only one active player - " + active_player.Name + " - who wins by default");
+                winners.Add(active_player);
+                return winners;
+            }
+
+            // Determine max pre-bonus score
             int max = 0;
             foreach (var player in this.players)
             {
-                if (player.Score > max) max = player.Score;
+                if (player.IsActive && player.Score > max) max = player.Score;
             }
 
             // Determine player(s) with high pre-bonus score
             var preBonusHighScores = new List<Player>();
             foreach (var player in this.players)
             {
-                if (player.Score == max) preBonusHighScores.Add(player);
+                if (player.IsActive && player.Score == max) preBonusHighScores.Add(player);
             }
 
 
@@ -373,7 +439,7 @@ namespace Scrabble.Core.Types
             foreach (var player in this.players)
             {
                 player.FinalizeScore();  // Subtract unplayed tiles
-                if (player.Tiles.Count == 0)
+                if (player.IsActive && player.Tiles.Count == 0)
                     firstFinisher = player;
                 else
                 {
@@ -394,13 +460,12 @@ namespace Scrabble.Core.Types
             max = 0;
             foreach (var player in this.players)
             {
-                if (player.Score > max) max = player.Score;
+                if (player.IsActive && player.Score > max) max = player.Score;
             }
 
-            var winners = new List<Player>();
             foreach (var player in this.players)
             {
-                if (player.Score == max) winners.Add(player);
+                if (player.IsActive && player.Score == max) winners.Add(player);
             }
             if (winners.Count > 1)
             {
@@ -413,37 +478,25 @@ namespace Scrabble.Core.Types
             }
 
             return winners;
-
         }
 
-
-        public void FinishGame(bool resigning)
+        public void FinishGame()
         {
-            var winners = this.TallyGameResult();
-
-
             FinalGameStatus = new GameOutcome();
             FinalGameStatus.WinningPlayerName = "";
-            if (resigning)
+
+            var winners = this.TallyGameResult();
+            if (winners.Count == 1)
             {
-                FinalGameStatus.Win_Type = WinTypes.WinType.Resign;
-                LastMoveResult = "Game resigned";
+                FinalGameStatus.Win_Type = WinTypes.WinType.Win;
+                FinalGameStatus.WinningPlayerId = winners[0].PlayerId;
+                FinalGameStatus.WinningPlayerName = winners[0].Name;
+                LastMoveResult = $"{winners[0].Name} won";
             }
             else
             {
-                if (winners.Count == 1)
-                {
-                    FinalGameStatus.Win_Type = WinTypes.WinType.Win;
-                    FinalGameStatus.WinningPlayerId = winners[0].PlayerId;
-                    FinalGameStatus.WinningPlayerName = winners[0].Name;
-                    LastMoveResult = $"{winners[0].Name} won";
-
-                }
-                else
-                {
-                    FinalGameStatus.Win_Type = WinTypes.WinType.Draw;
-                    LastMoveResult = "Game drawn";
-                }
+                FinalGameStatus.Win_Type = WinTypes.WinType.Draw;
+                LastMoveResult = "Game drawn";
             }
 
             TrackRecentMoves();

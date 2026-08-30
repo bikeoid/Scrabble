@@ -16,7 +16,7 @@ public partial class PlayerGame
     public int WinType { get; set; }
 
     public bool MyMove { get; set; }
-
+    
     public int HighestChatSeen { get; set; }
 
     public virtual Game Game { get; set; }
