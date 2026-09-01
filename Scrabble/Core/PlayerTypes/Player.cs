@@ -18,11 +18,20 @@ namespace Scrabble.Core.Types
         public List<Tile> Tiles { get; set; }
         public bool MyTurn { get; set; }
 
+        public string ActiveFlag { get; set; }
+
         public string Email { get; set; }
         public int PlayerPasses { get; set; }
         public int Skill { get; set; }
 
         public bool HasTiles => Tiles.Count > 0;
+        public bool IsActive
+        {
+            get
+            {
+                return ActiveFlag == "Y";
+            }
+        }
 
         public abstract void NotifyTurn(ITurnImplementor turnImplementor, string lastMoveDetail);
 
@@ -40,6 +49,7 @@ namespace Scrabble.Core.Types
             this.PlayerId= databaseID;
             this.Email = email;
             this.Skill = -1;
+            this.ActiveFlag = "Y";
             Tiles = new List<Tile>();
             Score = 0;
         }

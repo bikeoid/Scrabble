@@ -73,6 +73,9 @@ namespace Scrabble.Shared
                 this.LastMoveScore = activePlayer.LastMoveScore;
                 this.Tiles = activePlayer.Tiles;
                 this.MyTurn= activePlayer.MyTurn;
+                this.ActiveFlag = activePlayer.ActiveFlag;
+                // handle ActiveFlag setting for legacy games
+                if (String.IsNullOrEmpty(ActiveFlag)) ActiveFlag = "Y";
                 this.PlayerPasses = activePlayer.PlayerPasses;
                 this.Skill = -1;
                 if (activePlayer is ComputerPlayer)
@@ -93,9 +96,17 @@ namespace Scrabble.Shared
             public int LastMoveScore { get; set; }
             public List<Tile> Tiles { get; set; }
             public bool MyTurn { get; set; }
+
             public int PlayerPasses { get; set; }
             public int Skill { get; set; }
-
+            public string ActiveFlag { get; set; }
+            public bool IsActive
+            {
+                get
+                {
+                    return ActiveFlag == "Y";
+                }
+            }
         }
 
 
@@ -135,7 +146,6 @@ namespace Scrabble.Shared
             public Tile[][] GameGrid { get; set; }
         }
     }
-
 
 
 }

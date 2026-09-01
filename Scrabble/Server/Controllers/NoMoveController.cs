@@ -193,7 +193,7 @@ namespace Scrabble.Server.Controllers
         /// <summary>
         /// Perform pass or resign
         /// </summary>
-        /// <param name="resigning">True to resign game, false to pass turn</param>
+        /// <param name="resigning">True to resign from the game, false to pass turn</param>
         private GameState MakeTurn(GameStateDto gameStateDto, bool resigning)
         {
             var currentGame = new GameState(new List<Scrabble.Core.Types.Player>(), Utility.WordLookupSingleton.Instance);
@@ -202,7 +202,12 @@ namespace Scrabble.Server.Controllers
 
             if (resigning)
             {
-                currentGame.FinishGame(true);
+                // Resign
+                var resignTurn = new Resign();
+                currentGame.CurrentPlayer.TakeTurn(currentGame, resignTurn);
+
+                // player resignation no longer necessarily finishes the game
+                //currentGame.FinishGame(true);
             }
             else
             {
@@ -212,8 +217,6 @@ namespace Scrabble.Server.Controllers
             }
 
             return currentGame;
-
         }
     }
-
 }

@@ -50,6 +50,10 @@ namespace Scrabble.Shared
             activePlayer.MyTurn = sourcePlayer.MyTurn;
             activePlayer.PlayerPasses = sourcePlayer.PlayerPasses;
             activePlayer.Skill = sourcePlayer.Skill;
+            activePlayer.ActiveFlag = sourcePlayer.ActiveFlag;
+            // catch historical game data where ActiveFlag was not present and set it to "Y"
+            // because before this change no player could resign without it ending the game
+            if (String.IsNullOrEmpty(activePlayer.ActiveFlag)) activePlayer.ActiveFlag = "Y";
 
             return activePlayer;
         }
