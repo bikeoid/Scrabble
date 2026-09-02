@@ -1,16 +1,12 @@
 ﻿@inherits LayoutComponentBase
-<CascadingBlazoredModal />
+<CascadingBlazoredModal/>
 
 <div class="page">
-    <div class="sidebar" id="sidebar">
-        <NavMenu />
+    <div class="sidebar" id="sidebar" style="@IconMenuCssClass">
+        <NavMenu ShowIconMenu="ToggleIconMenu"/>
     </div>
 
     <main>
-        @* <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div> *@
-
         <article class="content px-4">
             @Body
         </article>
@@ -24,3 +20,13 @@
 </div>
 
 <link rel="stylesheet" href="@Assets["css/Scrabble.css"]" />
+
+@code {
+    private bool _iconMenuActive { get; set; }
+    private string? IconMenuCssClass => _iconMenuActive ? "width: 72px;" : null;
+
+    protected void ToggleIconMenu(bool iconMenuActive)
+    {
+        _iconMenuActive = iconMenuActive;
+    }
+}

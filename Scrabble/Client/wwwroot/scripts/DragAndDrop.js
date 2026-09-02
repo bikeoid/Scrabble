@@ -2,48 +2,54 @@
 //  Square game board on maximized desktop window should not create vertical scrollbar
 //  Square game board on portrait mobile layout should extend to left and right margin
 //     Landscape mobile not implemented
-const ExtraVerticalSpace = 100;
+//const ExtraVerticalSpace = 100;
 var playerRows = 1;
 
-function handleWindowSize() {
+function handleWindowSize()
+{
+    var browserHeight = window.innerHeight;
+    var browserWidth = window.innerWidth;
+    console.log("---");
+    console.log("Browser dimensions:")
+    console.log("   width=" + browserWidth + ", height=" + browserHeight);
 
     var gameArea = document.getElementById('game');
     if (!gameArea)
     {
         return;
     }
+    console.log("GAME AREA - offsetWidth=" + gameArea.offsetWidth + ", offsetHeight=" + gameArea.offsetHeight);
 
-    var browserHeight = window.innerHeight;
-    var browserWidth = window.innerWidth;
-    console.log("Browser dimensions:")
-    console.log("   width=" + browserWidth + ", height=" + browserHeight);
+    // can also use getBoundingClientRect() on an element but note it returns non-integer values
+    // so just use offsetWidth and offsetHeight
+    var gameBoard = document.getElementById('game-board');
+    var gameBoardColumnWidth = gameBoard.offsetWidth;
 
-    var sidebarWindow = document.getElementById('sidebar');
-    console.log("Sidebar dimensions:");
-    console.log("   clientWidth=" + sidebarWindow.clientWidth + ", clientHeight=" + sidebarWindow.clientHeight);
-    console.log("   offsetWidth=" + sidebarWindow.offsetWidth + ", offsetHeight=" + sidebarWindow.offsetHeight);
+    var sidebarColumn = document.getElementById('sidebar');
+    var sidebarColumnWidth = sidebarColumn.offsetWidth;
 
-    // game element
-    //var gameWindow = document.getElementById('game');
-    //var positionInfo = gameWindow.getBoundingClientRect();
-    // dimensions of game element
-    //var gameHeight = Math.floor(positionInfo.height);
-    //var gameWidth = Math.floor(positionInfo.width);
-    // or...
-    //var gameHeight = gameWindow.offsetHeight;
-    //var gameWidth = gameWindow.offsetWidth;
-    //console.log("Game dimensions:")
-    //console.log("   width=" + gameWidth + ", height=" + gameHeight);
+    var totalScoresColumn = document.getElementById('total-scores');
+    var totalScoresColumnWidth = totalScoresColumn.offsetWidth;
+
+    var recentMovesColumn = document.getElementById('recent-moves');
+    var recentMovesColumnWidth = recentMovesColumn.offsetWidth;
+
+    console.log("GB - offsetWidth=" + gameBoard.offsetWidth + ", offsetHeight=" + gameBoard.offsetHeight);
+    //console.log("SB - clientWidth=" + sidebarColumn.clientWidth + ", clientHeight=" + sidebarColumn.clientHeight);
+    console.log("SB - offsetWidth=" + sidebarColumn.offsetWidth + ", offsetHeight=" + sidebarColumn.offsetHeight);
+    console.log("TS - offsetWidth=" + totalScoresColumn.offsetWidth + ", offsetHeight=" + totalScoresColumn.offsetHeight);
+    console.log("RM - offsetWidth=" + recentMovesColumn.offsetWidth + ", offsetHeight=" + recentMovesColumn.offsetHeight);
 
     var gamePlayRow = document.getElementById('game-play-row');
     var gamePlayRowHeight = gamePlayRow.offsetHeight;
     var actionButtonsRow = document.getElementById('action-buttons-row');
     var actionButtonsRowHeight = actionButtonsRow.offsetHeight;
-    console.log("Row heights:")
-    console.log("   gamePlayRowHeight=" + gamePlayRowHeight + ", actionButtonsRowHeight=" + actionButtonsRowHeight);
+    console.log("GP/AB - gamePlayRowHeight=" + gamePlayRowHeight + ", actionButtonsRowHeight=" + actionButtonsRowHeight);
 
+    var isLandscape = false;
     if (browserWidth >= browserHeight)
     {
+        isLandscape = true;
         console.log("~ Landscape mode detected ~");
     }
     else
@@ -51,50 +57,52 @@ function handleWindowSize() {
         console.log("~ Portrait mode detected ~");
     }
 
+    /*
     var newHeight = browserHeight;
     var newWidth = browserWidth;
-    if (newWidth <= (sidebarWindow.clientWidth + 50)) {
+    if (newWidth <= (sidebarColumn.clientWidth + 50)) {
         // Sidebar is top-bar so adjust the height
-        newHeight -= sidebarWindow.offsetHeight;
+        newHeight -= sidebarColumn.offsetHeight;
     } else {
         // Sidebar is side-bar so adjust the width
-        newWidth -= sidebarWindow.offsetWidth;
+        newWidth -= sidebarColumn.offsetWidth;
+    }
+    */
+
+    /* size the board */
+    var boardSide = 0;
+
+    var newHeight = browserHeight;
+    var adjHeight = 2 * (gamePlayRowHeight + actionButtonsRowHeight);
+    newHeight -= adjHeight;
+
+    var newWidth = browserWidth;
+    var requiredWidth = sidebarColumnWidth + totalScoresColumnWidth + gameBoardColumnWidth + recentMovesColumnWidth;
+    var adjWidth = sidebarColumnWidth + totalScoresColumnWidth + recentMovesColumnWidth;
+    if (requiredWidth > browserWidth)
+    {
+        adjWidth = sidebarColumnWidth + totalScoresColumnWidth;
     }
 
-    // adjust height available for the game board by allocating 20% of
-    // the browser window height for the tiles and buttons
-    var RackAndButtonsHeight = Math.floor(0.20 * newHeight);
-    //newHeight -= Math.max(RackAndButtonsHeight);
-    //newHeight -= (gamePlayRowHeight + actionButtonsRowHeight)
-    newHeight -= Math.max(RackAndButtonsHeight, 2 * (gamePlayRowHeight + actionButtonsRowHeight));
+    newWidth -= adjWidth;
+    boardSide = Math.min(newWidth, newHeight);
 
-    // adjust width for the player scores and recent moves
-    //var PlayerScoresAndRecentMovesWidth = Math.floor(0.25 * newWidth);
-    //var PlayerScoresAndRecentMovesWidth = 192 + 320;
-    //newWidth -= PlayerScoresAndRecentMovesWidth;
-
-    console.log("new width=" + newWidth + ", new height=" + newHeight);
-
-    // set the length of the side of the square game board
-    //var boardSide = Math.min(newWidth, newHeight);
-    //var boardSide = Math.min(gameWidth, gameHeight);
-    var boardSide = newHeight;
-    console.log("boardSide=" + boardSide);
+    console.log("*** new width=" + newWidth + ", new height=" + newHeight + ", board side=" + boardSide);
 
     gameArea.style.height = boardSide + "px";
     gameArea.style.width = boardSide + "px";
 
     // i wonder what all the following variables are for
-    // some are fairly obvious but maybe some of the less obvious
-    // ones might be the reason for the double tile drop issue
-    // perhaps due to a rounding error in a size causing issues with
-    // cursor position events during drag and drop ?
+    // some are fairly obvious but maybe some of the less obvious ones
+    // might be the reason for the double tile drop issue perhaps due
+    // to a rounding error in a size causing issues with cursor
+    // position events during drag and drop ?
     // when triggered, two tiles are dropped onto adjacent cells of the
     // board and the large tile being dragged from the tile rack is not
     // cleared down
     // perhaps the innerSquareSize is too close in dimensions to the
-    // squareSize, so let's reduce by 2 pixels rather than 1 and see what happens
-    // might make drag and drop less responsive/accurate ?
+    // squareSize, so let's reduce by 2 pixels rather than 1 and see what
+    // happens - it might make drag and drop less responsive/accurate ?
     var pixelWidth = Math.floor(boardSide / 15) - 1;
 
     var squareSize = pixelWidth + "px";
@@ -738,7 +746,7 @@ export async function InitializeDragAndDrop(nPlayerRows) {
 
         handleWindowSize();  // Auto size game board to window/browser layout
         window.onresize = handleWindowSize;
-    }, 500);
+    }, 750);
 
 }
 
