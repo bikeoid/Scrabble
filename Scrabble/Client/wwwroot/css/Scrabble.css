@@ -135,7 +135,7 @@ textarea {
     display: grid;
     grid-template-columns: repeat(15, var(--square-space, 3vw));
     border: .4vw solid darkred;
-    padding: .4vw;
+    padding: var(--grid-border-padding);
 }
 
 .professor-owl {
@@ -179,6 +179,16 @@ textarea {
     justify-content: center;
     flex-direction: column;
 }
+
+
+.game-board-container {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: space-around;
+    align-items: center;
+}
+
 
 .game-play-container {
     display: flex;

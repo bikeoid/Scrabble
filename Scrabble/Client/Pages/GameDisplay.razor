@@ -38,7 +38,7 @@
 }
 else
 {
-    <div class="container">
+    <div class="container-fluid">
         @if (!String.IsNullOrEmpty(MessageForLocalHuman))
         {
             <div class="scoreboard" id="scoreboard">@MessageForLocalHuman</div>
@@ -48,14 +48,14 @@ else
             <div>&nbsp;</div>
         }
 
-        <div class="row mb-3">
-            <!-- Player scores on the left, current player at the top, next player below -->
-            <div class="col-auto">
+        <div class="row mb-3 d-flex flex-nowrap overflow-scroll">
+            <!-- Player total scores on the left, current player at the top, next player below -->
+            <div class="col-auto" id="total-scores">
                 <!-- 10rem => 160px -->
                 <!-- 12rem => 192px -->
                 <!-- 15rem => 240px -->
                 <!-- @{string score_card_style_options = "width: 10rem; max-width: 12rem";} -->
-                @{string score_card_style_options = "width: 12rem";}
+                @{string score_card_style_options = "min-width: 10rem; max-width: 12rem";}
                 @if (currentGame.FinalGameStatus == null)
                 {
                     <!-- the game is still in progress -->
@@ -160,7 +160,9 @@ else
             </div>
 
             <!-- Game board in the middle -->
-            <div class="col-auto">
+            <!-- pb-4 means that when the recent moves column is displaced to the next row -->
+            <!-- that there is decent separation between it and the action buttons -->
+            <div class="col-auto pb-4 game-board-container d-flex flex-nowrap" id="game-board">
                 <div class="game" id="game">
                     <div class="game-element-container">
                         <div class="game-board">
@@ -274,16 +276,18 @@ else
                 </div>
             </div>
 
-            <!-- Previous moves and scores on the right -->
-            <!-- is not displayed on insufficiently wide screens -->
-            <div class="col-auto d-none d-xxl-block">
+            <!-- Recent moves and scores on the right -->
+            <!-- it is not displayed on insufficiently wide screens -->
+            <!-- for now have removed this from the class 'd-none d-xxl-block' because the .js -->
+            <!-- has been jazzed up a bit to improve behaviour when resizing the browser window -->
+            <div class="col-auto" id="recent-moves">
                 <!-- 15rem => 240px -->
                 <!-- 20rem => 320px -->
                 <!-- @{string moves_card_style_options = "width: 15rem; max-width: 20rem";} -->
-                @{string moves_card_style_options = "width: 16rem";}
+                @{string moves_card_style_options = "min-width: 14rem; max-width: 16rem";}
                 @for (int i = currentGame.RecentMoves.Count - 1; i >= 0; i--)
                 {
-                    <!-- 'who' will only contain a name if 'action' is "played", "resigned", "passed", "swapped" or "won"
+                    <!-- 'who' will contain a name if 'action' is "starts", "played", "resigned", "passed", "swapped" or "won"
                     otherwise it will contain "Game" and 'action' will contain "drawn" -->
                     string who = currentGame.RecentMoves[i].Split(' ')[0];
                     string action = currentGame.RecentMoves[i].Split(' ')[1];
@@ -293,6 +297,13 @@ else
                             <h6 class="card-header">@who played...</h6>
                             <div class="card-body">@string.Join(" ", currentGame.RecentMoves[i].Split(' ')[2..^2])</div>
                             <div class="card-footer" style="text-align: right; font-weight: bold; font-style: italic;">Score : @currentGame.RecentMoves[i].Split(' ')[^1]</div>
+                        </div>
+                    }
+                    else if (action == "starts")
+                    {
+                        <div class="card mb-1 text-black bg-warning" style=@($"{moves_card_style_options}")>
+                            <h6 class="card-header">@who</h6>
+                            <div class="card-body">Starts the game</div>
                         </div>
                     }
                     else if (action == "won")

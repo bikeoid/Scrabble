@@ -152,6 +152,11 @@ namespace Scrabble.Core.Types
                 this.currentPlayerIndex = FindStartingPlayerIndex(startingPlayerId);
                 drawOutcome = $"Challenger {this.CurrentPlayer.Name} starts the game.";
             }
+            // probably should update TrackRecentMoves to take a parameter for the move
+            // result instead of using LastMoveResult, but for now just set it and then clear it
+            LastMoveResult = $"{this.CurrentPlayer.Name} starts the game";
+            TrackRecentMoves();
+            LastMoveResult = "";
 
 
             this.CurrentPlayer.MyTurn = true;

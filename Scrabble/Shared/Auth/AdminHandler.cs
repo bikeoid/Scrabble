@@ -22,7 +22,7 @@ namespace Scrabble.Shared.Auth
             }
 
             var emailAddress = context.User.FindFirst(c => c.Type == AppEmailClaimType.ThisAppEmailClaimType).Value;
-            //Console.WriteLine($"Checking auth Admin for {emailAddress}");
+            Console.WriteLine($"Checking auth policy 'IsAdmin' for email: '{emailAddress}'");
             var playerDto = AuthCache.CachedPlayer;
             if (playerDto == null || playerDto.Email != emailAddress)
             {
@@ -36,7 +36,9 @@ namespace Scrabble.Shared.Auth
                     }
 
                 }
-                catch (Exception ex) { 
+                catch (Exception ex) {
+                    Console.WriteLine(" ");
+                    Console.WriteLine("Error occurred while fetching admin player info.");
                     Console.WriteLine(ex.ToString());
                     return;
                 }
