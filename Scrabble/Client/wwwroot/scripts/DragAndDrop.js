@@ -89,8 +89,15 @@ function handleWindowSize()
 
     console.log("*** new width=" + newWidth + ", new height=" + newHeight + ", board side=" + boardSide);
 
+    if (boardSide < 540)
+    {
+        // Don't resize if the game area is too small
+        return;
+    }
+
     gameArea.style.height = boardSide + "px";
     gameArea.style.width = boardSide + "px";
+
 
     // i wonder what all the following variables are for
     // some are fairly obvious but maybe some of the less obvious ones
@@ -110,7 +117,7 @@ function handleWindowSize()
 
     // next three relate to the DL,DW,TL,TW squares
     var overscanPixels = Math.round(pixelWidth * 0.14);
-    var oversizeMarker = (pixelWidth + overscanPixels * 2) + "px";
+    var oversizeMarker = (pixelWidth + overscanPixels * 2 - 1) + "px";
     var overscanSize = -overscanPixels + "px";
 
     var tileFontSize = ((pixelWidth * 7) / 10) + "px";
@@ -128,6 +135,10 @@ function handleWindowSize()
     console.log("overscanPixels=" + overscanPixels + ", oversizeMarker=" + oversizeMarker + ", overscanSize=" + overscanSize);
     console.log("tileFontSize=" + tileFontSize + ", tileScoreFontSize=" + tileScoreFontSize + ", squareFontSize=" + squareFontSize);
     console.log("tileRackSize=" + tileRackSize);
+
+    var gridBorderPadding = (2 + overscanPixels) + "px";
+    //gridBorderPadding = "0px";
+    document.documentElement.style.setProperty('--grid-border-padding', gridBorderPadding);
 
     document.documentElement.style.setProperty('--square-space', squareSize);
     document.documentElement.style.setProperty('--inner-square-size', innerSquareSize);
