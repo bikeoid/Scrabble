@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
-using System.Diagnostics.CodeAnalysis;
 using Scrabble.Server.Data;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Scrabble.Server.Components.Account
 {
@@ -42,6 +43,58 @@ namespace Scrabble.Server.Components.Account
             context.Response.Cookies.Append(StatusCookieName, message, StatusCookieBuilder.Build(context));
             RedirectTo(uri);
         }
+
+
+        /// <summary>
+        /// Server-side redirect method for use from static/non-interactive components.
+        /// This performs an HTTP redirect instead of Blazor client navigation.
+        /// </summary>
+        public void RedirectToServer(string? uri, HttpContext? httpContext)
+        {
+            if (httpContext == null)
+            {
+                // Fallback to client-side navigation if HttpContext not available
+                RedirectTo(uri);
+                return;
+            }
+
+            uri ??= "";
+
+            // Prevent open redirects - ensure the URI is well-formed and relative
+            if (!Uri.IsWellFormedUriString(uri, UriKind.Relative))
+            {
+                uri = navigationManager.ToBaseRelativePath(uri);
+            }
+
+            // Additional validation before navigation
+            if (string.IsNullOrEmpty(uri) || Uri.IsWellFormedUriString(uri, UriKind.Absolute))
+            {
+                uri = "/"; // Default to home page if URI is invalid or absolute
+            }
+
+            // Ensure uri is not null or empty before navigation
+            if (string.IsNullOrWhiteSpace(uri))
+            {
+                uri = "/";
+            }
+
+            Console.WriteLine($"Server-side redirect to: {uri}");
+            Debug.WriteLine($"Server-side redirect to: {uri}");
+
+            try
+            {
+                // Convert relative URI to absolute for server-side redirect
+                var absoluteUri = navigationManager.ToAbsoluteUri(uri).ToString();
+                httpContext.Response.Redirect(absoluteUri);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Server-side redirect failed: {ex.Message}");
+                Console.WriteLine($"Server-side redirect failed: {ex.Message}");
+                throw;
+            }
+        }
+
 
         private string CurrentPath => navigationManager.ToAbsoluteUri(navigationManager.Uri).GetLeftPart(UriPartial.Path);
 
