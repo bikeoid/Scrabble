@@ -34,7 +34,8 @@ namespace Scrabble.Server.Controllers
 
         public async Task<int> NewGame([FromQuery] int skill, [FromQuery] bool owl, [FromBody] List<int> gamePlayerIds)
         {
-            Console.WriteLine($"NewGameController.NewGame called with skill {skill} and player IDs {string.Join(",", gamePlayerIds)}");
+            Console.WriteLine($"NewGameController.NewGame called with player IDs {string.Join(",", gamePlayerIds)}");
+            if (skill >= 0) Console.WriteLine($"Computer player skill level : {skill}");
             Console.WriteLine($"Owl assisted ? " + owl);
 
             var players = await (from pl in scrabbleDb.Players

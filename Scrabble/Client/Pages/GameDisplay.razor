@@ -397,7 +397,7 @@ else
     private List<TileInPlay> WordInPlay = new List<TileInPlay>();
 
     private const string JS_SetTileForDrop = "SetTileForDrop";
-    private const string JS_RmEventListenerForSquare = "RmEventListenerForSquare";
+    private const string JS_RmEventListenerForIdList = "RmEventListenerForIdList";
 
     private bool IsSwapping = false;
     private bool CanSwap => !currentGame.TileBag.IsEmpty;
@@ -457,7 +457,6 @@ else
             // InvokeAsync(StateHasChanged);
 
             await _jsModule.InvokeVoidAsync("playSound", soundPath);
-
         }
     }
 
@@ -477,7 +476,8 @@ else
         //      2.Rematch button
         //      3.An incoming request for a rematch (in this case the initialLoad flag was NOT being updated)
         await _jsModule.InvokeVoidAsync("CleanupDragAndDrop", null);
-        // not sure this next one is needed because when we navigate to a game the OnParametersSetAsync
+
+        // not sure this next one is needed because when we navigate to a game the OnParametersSetAsync()
         // method will set it to true anyway
         //initialLoad = true;
 
@@ -487,7 +487,11 @@ else
             if (target.Contains("/game/"))
             {
                 // Navigated to new game id from within existing game; log new game into hub
-                await hubConnection.InvokeAsync("ReceiveGameLogin", GameId);
+                // this next ReceiveGameLogin call is done in OnParametersSetAsync()
+                // so comment out and just print a blank line until am happy this part of
+                // the if block can be taken out
+                //await hubConnection.InvokeAsync("ReceiveGameLogin", GameId);
+                Console.WriteLine(" ");
             }
             else
             {
@@ -498,33 +502,52 @@ else
 
                 Console.WriteLine("*** GameState: Removed hub connection.");
                 hubConnection = null;
+
+                // handler not needed anymore
+                Console.WriteLine("Deregister the LocationChanging Handler");
+                LocationChangingHandler.Dispose();
             }
         }
+    }
 
-        // handler not needed anymore
-        Console.WriteLine("Deregister the LocationChanging Handler");
-        LocationChangingHandler.Dispose();
+    /// <summary>
+    /// Notify server which game we're playing
+    /// </summary>
+    /// <returns></returns>
+    private async Task SetGameIdAsync()
+    {
+        Console.WriteLine($"SetGameIdAsync(): Game ID={GameId}");
+        await hubConnection.InvokeAsync("ReceiveGameLogin", GameId);
     }
 
     protected override async Task OnInitializedAsync()
     {
         Console.WriteLine(" ");
-        Console.WriteLine($"OnInitializedAsync(): Game ID={GameId}");
+        Console.WriteLine("OnInitializedAsync()");
+
+        await SetupHub();
+        await hubConnection.StartAsync();
+
+        Console.WriteLine("Hub ConnectionId : '" + hubConnection.ConnectionId + "'");
 
         Console.WriteLine("Register a LocationChanging Handler");
         LocationChangingHandler = NavigationManager.RegisterLocationChangingHandler(OnLocationChanging);
 
-        await SetupHub();
         _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", @Assets["./scripts/DragAndDrop.js"]);
     }
 
     protected override async Task OnParametersSetAsync()
     {
+        Console.WriteLine(" ");
+        Console.WriteLine($"OnParametersSetAsync(): Game ID={GameId}");
+
+        await SetGameIdAsync();
+
         var authState = await authenticationStateTask;
         var user = authState.User;
 
         myEmail = user.Claims.Where(x => x.Type == AppEmailClaimType.ThisAppEmailClaimType).Select(x => x.Value).FirstOrDefault();
-        Console.WriteLine($"OnParametersSetAsync(): myEmail={myEmail}");
+        Console.WriteLine($"myEmail={myEmail}");
 
         MessageForLocalHuman = "New game";
         gameDisplayReference = this;
@@ -573,8 +596,6 @@ else
             Console.WriteLine(ex.ToString());
             return;
         }
-
-
     }
 
     private async Task<GameDto> DownloadGameDto(int gid)
@@ -624,7 +645,6 @@ else
         currentGame = newGame;
     }
 
-
     public static void HandleSingleClickOnTile(string tileId)
     {
         gameDisplayReference.SelectForSwapping(tileId);
@@ -649,8 +669,6 @@ else
         }
         StateHasChanged();
     }
-
-
 
     public static void HandleDoubleClickOnTile(string tileId)
     {
@@ -703,11 +721,15 @@ else
 
         if (!handled)
         {
-            Console.WriteLine($"Unhandled drop: {dragId} onto {dropId}");
+            Console.WriteLine($"RZR Unhandled drop: '{dragId}' onto '{dropId}'");
         }
 
         gameDisplayReference.EvaluateMove();
+
+        // WHY ?? what's the difference between calls to InvokeAsync(StateHasChanged),
+        // StateHasChanged() and the next line ?
         await gameDisplayReference.InvokeAsync(gameDisplayReference.StateHasChanged);
+
         //return Task.CompletedTask;
     }
 
@@ -766,7 +788,12 @@ else
                 var tileInPlay = WordInPlay[wordInPlayIndex];
                 var leavingSquare = currentGame.PlayingBoard.Get(tileInPlay.BoardPosition);
                 leavingSquare.Tile = null;
-                await InvokeAsync(StateHasChanged); // Notify of removed tile
+                
+                // something that looks mighty similar to this is called after this  method
+                // returns to caller. of course it could be something totally different coz i no
+                // little about blazor/dotnet/c# 
+                // anyhoo . commented it out for now to see if it breaks anything
+                // WHY ?? await InvokeAsync(StateHasChanged); // Notify of removed tile
 
                 targetSquare.Tile = tileInPlay.Tile;
                 tileInPlay.BoardPosition = targetSquare.BoardPosition;   // Update board position for WordInPlay
@@ -802,7 +829,8 @@ else
         // bail out early if drag and drop id values are the same...
         if (dragId == dropId)
         {
-            Console.WriteLine("dragId == dropId [" + dragId + "]");
+            actionsToRunAfterRender.Add((JS_SetTileForDrop, dragId));  // Re-enable for dragged tile
+            Console.WriteLine("RZR dragId == dropId [" + dragId + "]");
             return;
         }
 
@@ -815,7 +843,6 @@ else
             var moveTile = TilesInRack[sourceRackIndex];
             TilesInRack.RemoveAt(sourceRackIndex);
             TilesInRack.Insert(targetRackIndex, moveTile);
-
         }
         else if (sourceRackIndex >= 0)
         {
@@ -845,7 +872,10 @@ else
                 TilesInRack.Add(tileToRemove);
                 tileToRemove.TileInRack = true;
                 square.Tile = null;
-                await InvokeAsync(StateHasChanged); // Notify of removed tile
+
+                //again, WHY ?? is it because of the JS_SetTileForDrop further down
+                // and has to be run first ?
+                //await InvokeAsync(StateHasChanged); // Notify of removed tile
 
                 // Place tile on board
                 square.Tile = tileToPlace;
@@ -883,7 +913,8 @@ else
                 WordInPlay.RemoveAt(wordInPlayDropIndex);
                 TilesInRack.Add(tileToRemove);
                 fromSquare.Tile = null;
-                await InvokeAsync(StateHasChanged); // Notify of removed tile
+
+                // WHY ?? await InvokeAsync(StateHasChanged); // Notify of removed tile
 
                 // Place tile on board
                 toSquare.Tile = tileToMove;
@@ -1444,7 +1475,7 @@ else
             // remove event listeners for squares with newly pinned tiles
             if (lastMoveCountProcessed > -1)
             {
-                string squareIdList = "";
+                string idList = "";
                 for (int i = 0; i < newGame.RecentMoves.Count; i++)
                 {
                     //Console.WriteLine(newGame.RecentMoves[i]);
@@ -1458,18 +1489,18 @@ else
                             Console.WriteLine(newGame.RecentMoves[i]);
                             for (int j = 1; j < recentMovesArray.Length; j++)
                             {
-                                squareIdList = squareIdList + recentMovesArray[j] + ";";
+                                idList = idList + recentMovesArray[j] + ";";
                             }
                             lastMoveCountProcessed = recentMovesCount;
                         }
                     }
                 }
-                if (squareIdList.Length > 0)
+                if (idList.Length > 0)
                 {
-                    if (squareIdList.EndsWith(";"))
-                        squareIdList = squareIdList.TrimEnd(';');
-                    //Console.WriteLine("squareID list is '" + squareIdList + "'");
-                    actionsToRunAfterRender.Add((JS_RmEventListenerForSquare, squareIdList));
+                    if (idList.EndsWith(";"))
+                        idList = idList.TrimEnd(';');
+                    //Console.WriteLine("ID list is '" + idList + "'");
+                    actionsToRunAfterRender.Add((JS_RmEventListenerForIdList, idList));
                 }
             }
         }
@@ -1600,29 +1631,45 @@ else
         return foundIndex;
     }
 
-
-
     private async Task Rematch()
     {
         // Definition of rematch is to submit the same players again for new game
 
         var playerIdList = new List<int>();
+        var skill_level = -1;
         foreach (var player in currentGame.Players)
         {
             playerIdList.Add(player.PlayerId);
+            if (player is ComputerPlayer) skill_level = player.Skill;
         }
         playerIdList.Shuffle(); // Randomize order, even if challenger goes first
 
         try
         {
+            Console.WriteLine(" ");
+            Console.WriteLine("Rematch requested");
+            Console.WriteLine($"Starting new game with {playerIdList.Count} players");
+            if (skill_level > -1)
+                Console.WriteLine("Computer player skill level : " + skill_level);
+            Console.WriteLine("Owl assisted ? " + currentGame.AllowOwl);
+
             IsSubmitting = true;
-            var response = await Http.PostAsJsonAsync<List<int>>($"/api/NewGame", playerIdList);
+            // make sure the rematch game has same attributes as the current game now that
+            // use of owl and computer skill level can be specified
+            // we'll probably have to cycle through opponents to see if there is a Computer in the mix
+            // and if so what skill level it has
+            // it would be better if we could ask the server to clone the existing game in some way
+            // but for now this will do the job...
+            var uri = $"/api/NewGame?skill={(int)skill_level}&owl={currentGame.AllowOwl}";
+
+            var response = await Http.PostAsJsonAsync<List<int>>(uri, playerIdList);
             if (!response.IsSuccessStatusCode)
             {
                 MessageForLocalHuman = $"Unable to start game, code: {response.StatusCode.ToString()}";
                 isSubmitting = false;
                 return;
             }
+
             var newGameId = await response.Content.ReadFromJsonAsync<int>();
 
             // Notify other possible player(s) logged into this finished game that the rematch has been issued
@@ -1630,19 +1677,15 @@ else
             await hubConnection.InvokeAsync("BroadcastRematchGame", GameId, newGameId);
 
             NavigationManager.NavigateTo($"/game/{newGameId}");
-
         }
         catch (Exception ex)
         {
-
             MessageForLocalHuman = $"Something went wrong: {ex.Message}";
             Console.WriteLine(ex.ToString());
         }
         IsSubmitting = false;
         StateHasChanged();
     }
-
-
 
     private async Task SetupHub()
     {
@@ -1661,13 +1704,11 @@ else
         })
         .Build();
 
-
         hubConnection.Reconnecting += (exception) =>
         {
             Console.WriteLine($"Hub Connection started reconnecting due to an error: {exception}");
             return Task.CompletedTask;
         };
-
 
         hubConnection.Reconnected += async (connectionId) =>
         {
@@ -1744,19 +1785,14 @@ else
                     NavigationManager.NavigateTo($"/game/{newGameId}");
                 });
 
-        await hubConnection.StartAsync();
-
-        await SetGameIdAsync();
-    }
-
-
-    /// <summary>
-    /// Notify server which game we're playing
-    /// </summary>
-    /// <returns></returns>
-    private async Task SetGameIdAsync()
-    {
-        await hubConnection.InvokeAsync("ReceiveGameLogin", GameId);
+        // just want to make sure this part of the code only gets executed once per load of game page
+        // and not after any of the above callbacks have been called. i'm pretty sure it won't but this will help
+        // spot anything odd
+        Console.WriteLine(" ");
+        Console.WriteLine("*****************");
+        Console.WriteLine("*** SETUP HUB ***");
+        Console.WriteLine("*****************");
+        Console.WriteLine(" ");
     }
 
     public string PrintTimeSpan(TimeSpan t)

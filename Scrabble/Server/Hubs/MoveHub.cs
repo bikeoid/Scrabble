@@ -157,8 +157,7 @@ namespace Scrabble.Server.Hubs
                 }
                 else
                 {
-                    Console.WriteLine($"*** HUB Player {playerId} on game {oldGameId} not connected - not notified");
-
+                    Console.WriteLine($"*** HUB Player {playerId} on old game {oldGameId} not connected - not notified");
                 }
             }
 
@@ -260,8 +259,7 @@ namespace Scrabble.Server.Hubs
             {
                 return;
             }
-            //Console.WriteLine($"Hub: {connectingPlayer.Name}")
-            Console.WriteLine($"Hub: Game {gameId} login by player {connectingPlayer.PlayerId} ({connectingPlayer.Name}) on connection {Context.ConnectionId}");
+            Console.WriteLine($"Hub: Game {gameId} login by player {connectingPlayer.PlayerId} ({connectingPlayer.Name}) on connection '{Context.ConnectionId}'");
             Console.Out.Flush();
             var newGameConnectInfo = new GameConnectionInfo(Context.ConnectionId, gameId);
             lock (lockObject)
@@ -275,13 +273,12 @@ namespace Scrabble.Server.Hubs
                     connectedPlayerLookup.Add(connectingPlayer.PlayerId, newGameConnectInfo);
                 }
             }
-
         }
 
 
         public override async Task OnConnectedAsync()
         {
-            Console.WriteLine($"Hub: Connected  {Context.ConnectionId}");
+            Console.WriteLine($"Hub: Connected '{Context.ConnectionId}'");
 
             await base.OnConnectedAsync();
         }
@@ -294,7 +291,7 @@ namespace Scrabble.Server.Hubs
         /// <returns></returns>
         public override async Task OnDisconnectedAsync(Exception e)
         {
-            Console.WriteLine($"Hub: Disconnected {e?.Message} {Context.ConnectionId}");
+            Console.WriteLine($"Hub: Disconnected '{Context.ConnectionId}' {e?.Message}");
 
             lock (lockObject)
             {

@@ -4,22 +4,50 @@
 //     Landscape mobile not implemented
 var initialDisplay = true;
 
+// debug logging switches and associated functions
+var wszDebugging = false;  // window sizing
+var evtDebugging = false;  // event listeners/handlers
+var evtInitialSetupLogging = false;  // control logging during initial setup
+var dndDebugging = false;  // drag and drop operations
+
+// flag to switch use of removeEventListener
+// to make changing behaviour during testing/debugging easier
+// after much testing and game playing it seems leaving it set to false
+// is the best option
+var rmEvtListener = false;
+
+function wszLogMessage(msg) {
+    if (wszDebugging)
+        console.log(msg);
+}
+
+function evtLogMessage(msg) {
+    if (evtDebugging)
+        console.log(msg);
+}
+
+function dndLogMessage(msg) {
+    if (dndDebugging)
+        console.log(msg);
+}
+
+
 function handleWindowSize()
 {
     var browserHeight = window.innerHeight;
     var browserWidth = window.innerWidth;
     var devicePixelRatio = window.devicePixelRatio;
-    console.log(" ");
-    console.log("---");
-    console.log("Browser dimensions:")
-    console.log("   width=" + browserWidth + ", height=" + browserHeight + ", pixelRatio=" + devicePixelRatio);
+    wszLogMessage(" ");
+    wszLogMessage("---");
+    wszLogMessage("Browser dimensions:")
+    wszLogMessage("   width=" + browserWidth + ", height=" + browserHeight + ", pixelRatio=" + devicePixelRatio);
 
     var gameArea = document.getElementById('game');
     if (!gameArea)
     {
         return;
     }
-    console.log("GAME AREA - offsetWidth=" + gameArea.offsetWidth + ", offsetHeight=" + gameArea.offsetHeight);
+    wszLogMessage("GAME AREA - offsetWidth=" + gameArea.offsetWidth + ", offsetHeight=" + gameArea.offsetHeight);
 
     // can also use getBoundingClientRect() on an element but note it returns non-integer values
     // so just use offsetWidth and offsetHeight
@@ -35,27 +63,27 @@ function handleWindowSize()
     var recentMovesColumn = document.getElementById('recent-moves');
     var recentMovesColumnWidth = recentMovesColumn.offsetWidth;
 
-    console.log("GB - offsetWidth=" + gameBoard.offsetWidth + ", offsetHeight=" + gameBoard.offsetHeight);
-    //console.log("SB - clientWidth=" + sidebarColumn.clientWidth + ", clientHeight=" + sidebarColumn.clientHeight);
-    console.log("SB - offsetWidth=" + sidebarColumn.offsetWidth + ", offsetHeight=" + sidebarColumn.offsetHeight);
-    console.log("TS - offsetWidth=" + totalScoresColumn.offsetWidth + ", offsetHeight=" + totalScoresColumn.offsetHeight);
-    console.log("RM - offsetWidth=" + recentMovesColumn.offsetWidth + ", offsetHeight=" + recentMovesColumn.offsetHeight);
+    wszLogMessage("GB - offsetWidth=" + gameBoard.offsetWidth + ", offsetHeight=" + gameBoard.offsetHeight);
+    //wszLogMessage("SB - clientWidth=" + sidebarColumn.clientWidth + ", clientHeight=" + sidebarColumn.clientHeight);
+    wszLogMessage("SB - offsetWidth=" + sidebarColumn.offsetWidth + ", offsetHeight=" + sidebarColumn.offsetHeight);
+    wszLogMessage("TS - offsetWidth=" + totalScoresColumn.offsetWidth + ", offsetHeight=" + totalScoresColumn.offsetHeight);
+    wszLogMessage("RM - offsetWidth=" + recentMovesColumn.offsetWidth + ", offsetHeight=" + recentMovesColumn.offsetHeight);
 
     var gamePlayRow = document.getElementById('game-play-row');
     var gamePlayRowHeight = gamePlayRow.offsetHeight;
     var actionButtonsRow = document.getElementById('action-buttons-row');
     var actionButtonsRowHeight = actionButtonsRow.offsetHeight;
-    console.log("GP/AB - gamePlayRowHeight=" + gamePlayRowHeight + ", actionButtonsRowHeight=" + actionButtonsRowHeight);
+    wszLogMessage("GP/AB - gamePlayRowHeight=" + gamePlayRowHeight + ", actionButtonsRowHeight=" + actionButtonsRowHeight);
 
     var isLandscape = false;
     if (browserWidth >= browserHeight)
     {
         isLandscape = true;
-        console.log("~ Landscape mode detected ~");
+        wszLogMessage("~ Landscape mode detected ~");
     }
     else
     {
-        console.log("~ Portrait mode detected ~");
+        wszLogMessage("~ Portrait mode detected ~");
     }
 
     /*
@@ -88,7 +116,7 @@ function handleWindowSize()
     newWidth -= adjWidth;
     boardSize = Math.min(newWidth, newHeight);
 
-    console.log("*** new width=" + newWidth + ", new height=" + newHeight + ", board size=" + boardSize);
+    wszLogMessage("*** new width=" + newWidth + ", new height=" + newHeight + ", board size=" + boardSize);
 
     // numbers in px units...
     const MIN_SQUARE_SIZE = 32;
@@ -130,7 +158,7 @@ function handleWindowSize()
 
     // re-compute board size now that squareSize has been decided
     boardSize = 15 * squareSize + PADDING_AND_WIDTH;
-    console.log("adjusted board size=" + boardSize);
+    console.log("Adjusted board size=" + boardSize);
 
     gameArea.style.height = boardSize + "px";
     gameArea.style.width = boardSize + "px";
@@ -151,8 +179,8 @@ function handleWindowSize()
     // this is an offset to position the "oversized" special multiplier squares correctly on the board
     var multiplierSquareOffsetPx = (-1 * multiplierSquareOffset) + "px";
 
-    console.log("squareSizePx=" + squareSizePx + ", rackSizePx=" + rackSizePx);
-    console.log("multiplierSquareSizePx=" + multiplierSquareSizePx + ", multiplierSquareOffsetPx=" + multiplierSquareOffsetPx);
+    wszLogMessage("squareSizePx=" + squareSizePx + ", rackSizePx=" + rackSizePx);
+    wszLogMessage("multiplierSquareSizePx=" + multiplierSquareSizePx + ", multiplierSquareOffsetPx=" + multiplierSquareOffsetPx);
 
     document.documentElement.style.setProperty('--square-size', squareSizePx);
     document.documentElement.style.setProperty('--tile-rack-size', rackSizePx);
@@ -168,7 +196,7 @@ function handleWindowSize()
     document.documentElement.style.setProperty('--board-letter-fs', boardLetterFs + "px");
     document.documentElement.style.setProperty('--board-letter-value-fs', boardLetterValueFs + "px");
     document.documentElement.style.setProperty('--board-square-annotation-fs', boardSquareAnnotationFs + "px");
-    console.log("board-letter-fs=" + boardLetterFs + ", board-letter-value-fs=" + boardLetterValueFs + ", board-square-annotation-fs=" + boardSquareAnnotationFs);
+    wszLogMessage("board-letter-fs=" + boardLetterFs + ", board-letter-value-fs=" + boardLetterValueFs + ", board-square-annotation-fs=" + boardSquareAnnotationFs);
 
     // font sizes for a rack letter and its value...
     // ...so that everything is in better proportion when displayed on a tile in the rack
@@ -176,9 +204,9 @@ function handleWindowSize()
     var rackLetterValueFs = Math.floor(0.35 * rackFontSize);
     document.documentElement.style.setProperty('--rack-letter-fs', rackLetterFs + "px");
     document.documentElement.style.setProperty('--rack-letter-value-fs', rackLetterValueFs + "px");
-    console.log("rack-letter-fs=" + rackLetterFs + ", rack-letter-value-fs=" + rackLetterValueFs);
-    console.log("---");
-    console.log(" ");
+    wszLogMessage("rack-letter-fs=" + rackLetterFs + ", rack-letter-value-fs=" + rackLetterValueFs);
+    wszLogMessage("---");
+    wszLogMessage(" ");
 }
 
 
@@ -647,13 +675,7 @@ var DragDropTouch;
 /* End of touch -> drag/drop ------------------------ */
 
 
-var dndDebugging = false;
 
-function logMessage(msg) {
-    if (!dndDebugging)
-        return;
-    console.log(msg);
-}
 
 function getTileLetter(parent) {
     if (parent.hasChildNodes()) {
@@ -671,12 +693,12 @@ function getTileLetter(parent) {
 // drop sites once they are occupied during game play (and at start up if the board
 // is partly complete e.g. if a game is reloaded the event handlers are not registerd at all)
 
-export function handleDragStart(e) {
-    var draggedId = this.getAttribute('id');
+function handleDragStart(e) {
+    const draggedId = this.getAttribute('id');
 
-    logMessage(" ");
-    logMessage("< < <");
-    logMessage("handleDragStart for '" + draggedId + "' " + getTileLetter(this));
+    dndLogMessage(" ");
+    dndLogMessage("< < <");
+    dndLogMessage("handleDragStart for '" + draggedId + "' " + getTileLetter(this));
 
     this.style.opacity = '0.4';
 
@@ -684,19 +706,19 @@ export function handleDragStart(e) {
     e.dataTransfer.setData('text/plain', draggedId);
 }
 
-export function handleDragEnd(e) {
-    var draggedId = this.getAttribute('id');
-    logMessage("handleDragEnd for '" + draggedId + "' " + getTileLetter(this));
+function handleDragEnd(e) {
+    const draggedId = this.getAttribute('id');
+
+    dndLogMessage("handleDragEnd for '" + draggedId + "' " + getTileLetter(this));
 
     this.style.opacity = '1';
 
-    logMessage("> > >");
-    logMessage(" ");
+    dndLogMessage("> > >");
+    dndLogMessage(" ");
 }
 
-export function handleDragOver(e) {
+function handleDragOver(e) {
     e.preventDefault();  // Drop will be supported
-    return false;
 }
 
 //export function handleDragEnter(e) {
@@ -708,27 +730,65 @@ export function handleDragOver(e) {
 //}
 
 export async function handleDrop(e) {
-    //var locationId = this.getAttribute('id');
-    var dragId = e.dataTransfer.getData('text/plain');
+    e.preventDefault();
+
+    const dragId = e.dataTransfer.getData('text/plain');
     var dropId = this.getAttribute('id');
-    //logMessage("handleDrop @ '" + locationId + "' for : dragId(source) '" + dragId + "' -> dropId(target) '" + dropId + "'");
-    logMessage("handleDrop for : dragId(source) '" + dragId + "' -> dropId(target) '" + dropId + "'");
 
-    if (!dragId || !dropId) return;
+    //console.log(e);
+    dndLogMessage("handleDrop for : dragId(source) '" + dragId + "' -> dropId(target) '" + dropId + "'");
 
-    e.stopPropagation();
+    // if we don't stop event propagation there are four scenarios and their associated events involving the board.
+    // by allowing propagation we allow events to bubble. if we stop it then the "dragend" event is never delivered
+    // to the registered handler. so, it's probably better to allow all the events to flow and to intercept and
+    // suppress the second tile to square drop in scenarios 2 and 4
+    // 1.rack tile -> empty square
+    //  events (1) : drag Tile -> drop Square
+    // 2.rack tile -> square with tile
+    //  events (2) : drag Tile "A" -> drop Tile "B", drag Tile "A" -> drop Square
+    // 3.square with tile -> empty square
+    //  events (1) : drag Tile -> drop Square
+    // 4.square with tile -> square with tile
+    //  events (2) : drag Tile "A" -> drop Tile "B", drag Tile "A" -> drop Square
+    //
+    // There is a fifth scenario which involves only tiles on the rack when re-organising the order
+    // 5.rack tile -> rack tile
+    // events (1) : drag Tile "A" -> drop Tile "B"
 
-    // if drag didn't take the tile out of its current home on the board then
-    // the two id values will be equal. if they are not then there is work to do to notify dotnet
-    // note that the async nature of the dotnet call means that sometimes the dragend event handler
-    // is called before the await returns (so any messages being logged could be out of sequence)
-    if (dragId != this.getAttribute('id')) {
-        // Notify dotnet
-        await DotNet.invokeMethodAsync("Scrabble.Client", "HandleDropAsync", dragId, dropId);
+    if (dropId.startsWith('Square')) {
+        var hasTile = this.getElementsByClassName('tile-container');
+        if (hasTile.length > 0) {  // the square contains a tile
+            // one option is to simply ignore this event
+            if (!rmEvtListener)
+                return;
+
+            // or
+            // reference the tile as target and pass it to dotnet
+            // but note that the tile id will be the tile that has been newly dragged on
+            // to the square. so by replacing the dropId with the id of the tile now in
+            // place, if we pass it on to DotNet it looks like a Tile -> same Tile drop ie 
+            // a tile that hasn't moved from its original location
+            dropId = hasTile[0].getAttribute('id');
+            dndLogMessage("... now handleDrop for : dragId(source) '" + dragId + "' -> dropId(target) '" + dropId + "'");
+        }
     }
-    else {
-        console.log("handleDrop : this and dragId are the same '" + dragId + "' " + getTileLetter(this));
-    }   
+
+    //e.stopPropagation();
+
+    //if (!dragId || !dropId)
+    //{
+    //    console.log("Missing one or both of dragId / dropId");
+    //    return;
+    //}
+
+    // let dotnet handle everthing, which allows for the tiles to have event handlers re-instated via
+    // calls to SetTileForDrop() method
+    await DotNet.invokeMethodAsync("Scrabble.Client", "HandleDropAsync", dragId, dropId);
+}
+
+function handleContextMenu(event) {
+        event.preventDefault();
+        event.stopPropagation();
 }
 
 // Allow focus set to element
@@ -752,49 +812,42 @@ function OnContextMenu(e) {
     return false;
 };
 
-export function RmEventListenerForSquare(squareIdList) {
-    // squareIdList passed as a semicolon delimited list of SquareId  and TileId values
+export function RmEventListenerForIdList(idList) {
+    // idList passed as a semicolon delimited list of SquareId and TileId values
     // i.e. Square,1,1;Square,2,1;Tile,39; ...
-    var squares = squareIdList.split(";");
-    for (var i = 0; i < squares.length; i++) {
-        //logMessage("JS removeEventListener for '" + squares[i] + "'")
-        if (squares[i].startsWith("Square")) {
-            let sq = document.getElementById(squares[i]);
-            //sq.removeEventListener('dragover', handleDragOver);
-            //sq.removeEventListener('drop', handleDrop);
+    var ids = idList.split(";");
+    for (var i = 0; i < ids.length; i++) {
+        //evtLogMessage("(JS) RmEventListener for '" + ids[i] + "'")
+        if (ids[i].startsWith("Square")) {
+            let sq = document.getElementById(ids[i]);
             MyRemoveEventListenerByIdAndType(sq, 'dragover');
             MyRemoveEventListenerByIdAndType(sq, 'drop');
         }
-        else if (squares[i].startsWith("Tile")) {
-            let tl = document.getElementById(squares[i]);
+        else if (ids[i].startsWith("Tile")) {
+            let tl = document.getElementById(ids[i]);
             MyRemoveEventListenerByIdAndType(tl, 'dragstart');
             MyRemoveEventListenerByIdAndType(tl, 'dragover');
             MyRemoveEventListenerByIdAndType(tl, 'dragend');
             MyRemoveEventListenerByIdAndType(tl, 'drop');
             // context on tile for mobile
             MyRemoveEventListenerByIdAndType(tl, 'contextmenu');
-            /*
-            tl.removeEventListener('dragstart', handleDragStart);
-            tl.removeEventListener('dragover', handleDragOver);
-            tl.removeEventListener('dragend', handleDragEnd);
-            tl.removeEventListener('drop', handleDrop);
-            // context on tile for mobile
-            tl.removeEventListener('contextmenu', function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }, true); */
         }
     }
 }
 
 export function SetEventListeners() {
-    // this function called once
-    // either for a new game where the board is blank or
-    // when setting up a partially played game
+    // this function is called once either for a new game where the board is blank or when
+    // setting up an existing partially played game.
     // for the former, all 225 squares will be set up with dragover and drop event handlers
     // for the latter, only unoccupied squares will be set up with dragover and drop event handlers
-    // unlike previously the tiles on the tile rack will NOT have event handlers set up as this
-    // is taken care of by the C# code
+    // unlike previously, the tiles on the tile rack will NOT have event handlers set up as this
+    // is taken care of by the C# code via a call to the JS routine SetTileForDrop()
+
+    // override debug logging for startup - hopefully nothing else will call evtLogMessage()
+    // while SetEventListeners() is executing and before the evtDebugging flag can be re-instated
+    var _evtDebugging = evtDebugging;
+    evtDebugging = evtInitialSetupLogging;
+
     var oc = 0;
     var noc = 0;
     let sqs = document.querySelectorAll('.square');
@@ -805,8 +858,6 @@ export function SetEventListeners() {
         }
         else {
             noc++;
-            //sq.addEventListener('dragover', handleDragOver);
-            //sq.addEventListener('drop', handleDrop);
             MyAddEventListener(sq, 'dragover', handleDragOver);
             MyAddEventListener(sq, 'drop', handleDrop);
         }
@@ -814,6 +865,9 @@ export function SetEventListeners() {
 
     console.log(oc + " occupied");
     console.log(noc + " not occupied");
+
+    // re-instate the debug logging flag
+    evtDebugging = _evtDebugging;
 }
 
 function showTileTextContent(parent, msg) {
@@ -829,9 +883,10 @@ function showTileTextContent(parent, msg) {
 }
 
 export function SetTileForDrop(tileId) {
+    evtLogMessage("(JS) SetTileForDrop '" + tileId + "'");
     let tile = document.getElementById(tileId);
     if (!tile) {
-        console.log("(JS) Unable to find tileId '" + tileId + "' in DOM");
+        console.log("(JS) SetTileForDrop : Unable to find tileId '" + tileId + "' in DOM");
         return; // Logic error
     }
     //showTileTextContent(tile, "(JS) Enable DnD for tileId '" + tileId + "'");
@@ -842,28 +897,22 @@ export function SetTileForDrop(tileId) {
     MyAddEventListener(tile, 'drop', handleDrop);
 
     // Prevent context on tile for mobile
-    MyAddEventListener(tile, 'contextmenu', function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }, true);
-/*
-    tile.addEventListener('dragstart', handleDragStart);
-    tile.addEventListener('dragover', handleDragOver);
-    tile.addEventListener('dragend', handleDragEnd);
-    tile.addEventListener('drop', handleDrop);
+    MyAddEventListener(tile, 'contextmenu', handleContextMenu, true);
 
-    // Prevent context on tile for mobile
-    tile.addEventListener('contextmenu', function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }, true);
-    */
+    //MyAddEventListener(tile, 'contextmenu', function (event) {
+    //    event.preventDefault();
+    //    event.stopPropagation();
+    //}, true);
 }
 
 export async function InitializeDragAndDrop() {
+    // do this in case there's anything 'hanging around'
+    // but there really shouldn't be
+    MyRemoveAllEventListeners();
+
     // Delayed initialize to ensure browser rendering complete
     setTimeout(() => {
-        SetEventListeners(); // For tiles
+        SetEventListeners(); // For board squares
         handleWindowSize();  // Auto size game board to window/browser layout
         window.onresize = handleWindowSize;
     }, 1000);
@@ -907,10 +956,7 @@ export function playSound(audioFilename) {
 
 
 
-
-
 // Track event listeners
-var evtDebugging = false;
 var my_listeners = {};
 class MyHandler {
     // Each handler has four properties. the object itself, its attribute e.g. Tile,41
@@ -924,7 +970,7 @@ class MyHandler {
         this.options = options
     }
 }
-function MyAddEventListener(obj_id, type, fn, options)
+function MyAddEventListener(obj_id, type, fn, options = null)
 {
     var attr_id = obj_id.getAttribute("id");
     var letter = "";
@@ -943,17 +989,32 @@ function MyAddEventListener(obj_id, type, fn, options)
             break;
         }
     }
+
     var handler = new MyHandler(obj_id, attr_id, fn, options);
     var action = "Add";
     if (index == -1)
         my_listeners[type].push(handler);
     else
     {
+        // just checking !
+        //console.log("== " + (obj_id == my_listeners[type][index].obj_id));
+        //console.log("=== " + (obj_id === my_listeners[type][index].obj_id));
+
         action = "Update";
-        // remove the old handler from the object - nope. it seems to cause issues with some DnD scenarios
-        // feels like there is an issue being obscured here with timing of callbacks etc which will bite
-        // on occasions?
-        // ~~ my_listeners[type][index].obj_id.removeEventListener(type, my_listeners[type][index].fn, my_listeners[type][index].options);
+        // it seemed like removing the old handler from the object before registering a new one would be a good
+        // idea. however, it seems to cause issues with some DnD scenarios which are difficult to predict ie
+        // it doesn't happen every time a DnD action is being performed
+        // feels like there is an issue being obscured here with timing of callbacks or due to a lack of understanding
+        // of how the events and actions are processed etc which will bite on occasions?
+        // i dont really understand why removing the event listener breaks things...
+        // other than perhaps preventing in-flight events from being delivered and GC kicking in to
+        // remove objects - since the characteristics of the "fail" scenarios involve missing id values eg 
+        // instead of "Tile,42" we get "" or undefined because, on inspecting html for Tile,42 none of the events
+        // that should have been added are present - so it's almost like they are added and then removed
+        // rather than being removed and then added
+        // for now it seems safer to set rmEvtListener to false and not try to remove the listener
+        if (rmEvtListener)
+            my_listeners[type][index].obj_id.removeEventListener(type, my_listeners[type][index].fn, my_listeners[type][index].options);
 
         // update our list for the object with the new handler
         my_listeners[type][index] = handler;
@@ -961,18 +1022,19 @@ function MyAddEventListener(obj_id, type, fn, options)
 
     // register/re-register the handler
     obj_id.addEventListener(type, fn, options);
-    if (evtDebugging)
-        console.log(action + " handler for '" + attr_id + letter + "' [" + type + "/" + my_listeners[type].length +"]");
+    evtLogMessage(action + " handler for '" + attr_id + letter + "' [" + type + "/" + my_listeners[type].length +"]");
 }
 function MyRemoveAllEventListeners()
 {
-    if (evtDebugging)
-        console.log("(JS) RemoveAllEventListeners");
+    evtLogMessage("(JS) RemoveAllEventListeners");
+
     MyRemoveEventListenerByType('dragstart');
     MyRemoveEventListenerByType('dragover');
     MyRemoveEventListenerByType('dragend');
     MyRemoveEventListenerByType('drop');
     MyRemoveEventListenerByType('contextmenu');
+
+    my_listeners = {};
 }
 function MyRemoveEventListenerByType(type)
 {
@@ -984,8 +1046,8 @@ function MyRemoveEventListenerByType(type)
         var handler = my_listeners[type][i];
         handler.obj_id.removeEventListener(type, handler.fn, handler.options);
     }
-    if (evtDebugging)
-        console.log("(JS) RmByType removed "+ my_listeners[type].length +" [" + type + "] listeners");
+
+    evtLogMessage("(JS) RmByType removed "+ my_listeners[type].length +" [" + type + "] listeners");
 
     my_listeners[type] = [];
 }
@@ -1007,8 +1069,7 @@ function MyRemoveEventListenerByIdAndType(obj_id, type)
             handler.obj_id.removeEventListener(type, handler.fn, handler.options);
             // remove the item from the list
             my_listeners[type].splice(i, 1);
-            if (evtDebugging)
-                console.log("RmByIdAndType for '" + attr_id + letter + "' [" + type + "/" + my_listeners[type].length +"]");
+            evtLogMessage("RmByIdAndType for '" + attr_id + letter + "' [" + type + "/" + my_listeners[type].length +"]");
             break;
         }
     }
@@ -1028,8 +1089,8 @@ var removeAllEventListener = function (type) {
 // Remove event listeners to prevent an unlimited number of
 // event listeners when switching between multiple games
 export async function CleanupDragAndDrop() {
-    if (evtDebugging)
-        console.log("(JS) CleanupDragAndDrop");
+    evtLogMessage("(JS) CleanupDragAndDrop");
+
     /* not sure this stuff was actually working...
     removeAllEventListener('dragstart');
     removeAllEventListener('dragover');

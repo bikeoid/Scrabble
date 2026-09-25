@@ -158,15 +158,30 @@
         errorMessage = "";
         var playerIdList = new List<int>();
         playerIdList.Add(myPlayerId);
+        var hasComputerPlayer = false;
         foreach(var player in opponents)
         {
-            if (player.Selected) playerIdList.Add(player.Player.PlayerId);
+            if (player.Selected)
+            {
+                playerIdList.Add(player.Player.PlayerId);
+                if (player.Player.IsComputerPlayer) hasComputerPlayer = true;
+            }
         }
 
-        Console.WriteLine($"Starting new game with {playerIdList.Count} players, skill level {(int)proficiency.Level}");
+        Console.WriteLine($"Starting new game with {playerIdList.Count} players");
         try
         {
-            var uri = $"/api/NewGame?skill={(int)proficiency.Level}&owl={(bool)owlSelected}";
+            var uri = "";
+            if (hasComputerPlayer)
+            {
+                Console.WriteLine("Computer player skill level is '" + proficiency.Level + "'");
+                uri = $"/api/NewGame?skill={(int)proficiency.Level}&owl={(bool)owlSelected}";
+            }
+            else
+            {
+                uri = $"/api/NewGame?skill=-1&owl={(bool)owlSelected}";
+            }
+            
             var response = await Http.PostAsJsonAsync<List<int>>(uri, playerIdList);
             if (!response.IsSuccessStatusCode)
             {

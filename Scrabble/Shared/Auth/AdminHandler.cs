@@ -84,13 +84,13 @@ namespace Scrabble.Shared.Auth
 
             if (playerDto != null && playerDto.IsAdmin)
             {
-                Console.WriteLine("AdminHandler: User has 'IsAdmin' access");
+                //Console.WriteLine("AdminHandler: User has 'IsAdmin' access");
                 context.Succeed(requirement);
             }
-            else
-            {
-                Console.WriteLine("AdminHandler: User does not have 'IsAdmin' access");
-            }
+            //else
+            //{
+            //    Console.WriteLine("AdminHandler: User does not have 'IsAdmin' access");
+            //}
 
             return;
         }
