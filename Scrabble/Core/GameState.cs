@@ -530,6 +530,10 @@ namespace Scrabble.Core.Types
             Player active_player = null;
             foreach (Player p in this.players)
             {
+                // set the MyTurn value to false for all players now the game is over
+                // because some gui display features use it to determine
+                // what buttons to display after something changes in the game
+                p.MyTurn = false;
                 if (p.IsActive)
                 {
                     if (active_player_count == 0) active_player = p;
@@ -592,6 +596,7 @@ namespace Scrabble.Core.Types
             {
                 if (player.IsActive && player.Score == max) winners.Add(player);
             }
+
             if (winners.Count > 1)
             {
                 // Have final score tie: resolve by using pre-bonus score

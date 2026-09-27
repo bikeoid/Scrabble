@@ -193,14 +193,10 @@ else
                 <!-- The owl, player tile rack and tile bag -->
                 <div id="game-play-row" class="game-play-container">
                     <div>
-                        @{string owl_is = "invisible";}
                         @if (!MyMove && currentMoveGameDto != null && AllowTheOwl() && !showProfessorDialog)
                         {
-                            owl_is = "visible";
-                        }
-                        <div class=@($"{owl_is}")>
                             <button class="professor-owl" @onclick=ShowProfessorAdvisor/>
-                        </div>
+                        }
                     </div>
 
                     <div class="player-tiles">
@@ -229,64 +225,106 @@ else
                         }
                         else
                         {
-                            <button @onclick=Shuffle disabled="@DisabledShuffle()">Shuffle</button>
-                            @for (int i = 0; i < TilesInRack.Count; i++)
+                            @if (TilesInRack.Count > 0)
                             {
-                                var index = i;
-                                <UITile_2 @key="TilesInRack[index].ID" TilePiece="TilesInRack[index]"></UITile_2>
+                                if (!reloadCompletedGame)
+                                {
+                                    <button @onclick=Shuffle disabled="@DisabledShuffle()">Shuffle</button>
+                                }
+                                @for (int i = 0; i < TilesInRack.Count; i++)
+                                {
+                                    var index = i;
+                                    <UITile_2 @key="TilesInRack[index].ID" TilePiece="TilesInRack[index]"></UITile_2>
+                                }
                             }
-
-                            <!-- <div class="tile-bag-area"> -->
-                                <div class="tile-bag">
-                                    @currentGame.TileBag.Inventory.Count
-                                </div>
-                            <!-- </div> -->
+                            @if (currentGame.TileBag.Inventory.Count > 0 && !reloadCompletedGame)
+                            {
+                                <!-- <div class="tile-bag-area"> -->
+                                    <div class="tile-bag">
+                                        @currentGame.TileBag.Inventory.Count
+                                    </div>
+                                <!-- </div> -->
+                            }
                         }
                     </div>
                 </div>
 
                 <!-- Action buttons -->
                 <div id="action-buttons-row" class="action-buttons-container">
-                    @if (!showProfessorDialog)
+                    @if (!showProfessorDialog && !reloadCompletedGame)
                     {
-                        <div class="action-buttons-container">
+                        <!-- standard button settings : no shadow and all same border settings -->
+                        string button_standard_settings = "shadow-none border border-dark border-1 rounded-2";
+
+                        <!-- switch to only displaying buttons if conditions merit rather than -->
+                        <!-- marking them as disabled as it seems clearer -->
+                        <div class="col-auto d-inline-flex gap-3">
                             @if (!MyMove && MyGamesList.NextUnplayedGameId() > 0)
                             {
-                                <button class="next-game-nudge" @onclick=NextUnplayedGame>Next Game</button>
+                                <!-- was class="next-game-nudge" for a purple colour, now use hex values for purple -->
+                                <button class=@($"btn {button_standard_settings}")
+                                        style="--bs-btn-bg: #673ab7; --bs-btn-hover-bg: #5e35b1; color: white;"
+                                        @onclick=NextUnplayedGame>Next Game</button>
                             }
 
-                            @if (currentGame.FinalGameStatus == null)
+                            @if (MyMove && currentGame.FinalGameStatus == null)
                             {
                                 @if (IsSwapping)
                                 {
-                                    <span>(Exchange): Select tiles </span>
-                                    <button @onclick=StopSwap>Cancel</button>
-                                    <button @onclick=DoSwap disabled="@Disabled(SwappingTiles.Count == 0 || (SwappingTiles.Count > currentGame.TileBag.Inventory.Count))">Swap</button>
+                                    <span>Select tiles for exchange</span>
+                                    <button class=@($"btn btn-warning {button_standard_settings}")
+                                            @onclick=StopSwap>Cancel</button>
+                                    if (SwappingTiles.Count > 0 && SwappingTiles.Count <= currentGame.TileBag.Inventory.Count)
+                                    {
+                                        <button class=@($"btn btn-danger {button_standard_settings}")
+                                                @onclick=DoSwap>Swap</button> 
+                                    }
                                 }
                                 else
                                 {
                                     if (WordInPlay.Count == 0)
                                     {
-                                        <button @onclick=Pass disabled="@Disabled(!MyMove)">Pass</button>
-                                        <button @onclick=StartSwap disabled="@Disabled(!MyMove || !CanSwap)">Exchange</button>
+                                        <button class=@($"btn {button_standard_settings}")
+                                                style="--bs-btn-bg: var(--bs-orange); --bs-btn-hover-bg: #fb8c00; color: black;"
+                                                @onclick=Pass>Pass</button>
+                                        if (CanSwap)
+                                        {
+                                            <button class=@($"btn btn-warning {button_standard_settings}")
+                                                    @onclick=StartSwap>Exchange</button>
+                                        }
                                     }
                                     else
                                     {
-                                        <button @onclick=Play disabled="@Disabled(WordInPlay.Count==0 || !validMove)">Play</button>
-                                        <button @onclick=Recall disabled="@Disabled(WordInPlay.Count==0)">Recall</button>
+                                        <!-- the recall buttons are only displayed if WordInPlay.Count != 0 so no need to mark them as disabled because they won't be seen -->
+                                        <!-- and the play button won't be shown if it's not a valid move -->
+                                        <!-- motivation for change is that the bootstrap colours become "washed out" for disabled buttons due to opacity setting of 0.65 -->
+                                        if (validMove)
+                                        {
+                                            <button class=@($"btn btn-success {button_standard_settings}")
+                                                    @onclick=Play>Play</button>
+                                        }
+                                        <button class=@($"btn btn-primary {button_standard_settings}")
+                                                @onclick=RecallAll>Recall All</button>
+                                        <button class=@($"btn btn-outline-primary {button_standard_settings}")
+                                                @onclick=RecallLast>Recall Last [@WordInPlay.Count]</button>
                                     }
-                                    <button @onclick=Resign disabled="@Disabled()">Resign</button>
+                                    <button class=@($"btn btn-danger {button_standard_settings}")
+                                            @onclick=Resign>Resign</button>
                                 }
                             }
-                            else
+
+                            @if (currentGame.FinalGameStatus != null)
                             {
-                                <button @onclick=Rematch>Rematch</button>
+                                <button class=@($"btn btn-info {button_standard_settings}")
+                                        @onclick=Rematch>Rematch</button>
                             }
 
                             <!-- don't get distracted if you are swapping tiles -->
                             @if (!IsSwapping)
                             {
-                                <button class="@ChatAlert()" @onclick=ShowChat>Chat</button>
+                                <button class=@($"btn {button_standard_settings}")
+                                        style=@($"{ChatAlert()}")
+                                        @onclick=ShowChat>Chat</button>
                             }
                         </div>
                     }
@@ -416,17 +454,21 @@ else
 
     private bool professorMoveValid = false;
     private bool showProfessorDialog = false;
+    private bool professorDialogOpen = false;
     private string professorMessage = "";
 
     int highestChatSeen = 0;
 
     private List<Tile> SwappingTiles = new List<Tile>();
 
-    private bool Disabled(bool buttonDisabled = false) => buttonDisabled || IsSubmitting || !MyMove;
-    private bool DisabledShuffle(bool buttonDisabled = false) => buttonDisabled || IsSubmitting || (currentGame.FinalGameStatus != null);
-    private bool initialLoad = true;
-
     private bool AllowTheOwl() => currentGame.AllowOwl;
+
+    //private bool Disabled(bool buttonDisabled = false) => buttonDisabled || IsSubmitting || !MyMove;
+    private bool DisabledShuffle(bool buttonDisabled = false)
+                    => buttonDisabled || IsSubmitting || (currentGame.FinalGameStatus != null) || (TilesInRack.Count < 3);
+    
+    private bool initialLoad = true;
+    private bool reloadCompletedGame = false;
 
     private HubConnection hubConnection;
     private Data.ChatParameters chatParameters;
@@ -560,6 +602,12 @@ else
 
         myName = FindSelf(currentGame).Name;
         lastMoveCountProcessed = currentGame.MoveCount - 1;
+
+        // check for a previously completed game that is being reloaded
+        // so that buttons can be suppressed from the display
+        if (currentGame.FinalGameStatus != null)
+            reloadCompletedGame = true;
+
         Console.WriteLine($"myName={myName}");
         Console.WriteLine("lastMoveCountProcessed = " + lastMoveCountProcessed);  // initialization 
 
@@ -653,6 +701,7 @@ else
     private void SelectForSwapping(string tileId)
     {
         if (!IsSwapping) return;
+
         var rackIndex = FindTileIndexInRack(tileId);
         if (rackIndex < 0) return;
 
@@ -660,13 +709,16 @@ else
         tile.SelectedForSwap = !tile.SelectedForSwap;   // Toggle X overlay
         if (tile.SelectedForSwap)
         {
-            if (SwappingTiles.Count >= currentGame.TileBag.Inventory.Count) return; // alert tone?
             SwappingTiles.Add(tile);
+            // dont do this now
+            // the gui will deactivate the "Swap" button so it cant be pressed
+            //if (SwappingTiles.Count >= currentGame.TileBag.Inventory.Count) return; // alert tone?
         }
         else
         {
             SwappingTiles.Remove(tile);
         }
+
         StateHasChanged();
     }
 
@@ -1022,31 +1074,42 @@ else
 
     }
 
-
-
-
-    private async Task Recall()
+    private async Task RecallAll()
     {
-        //Console.WriteLine("Recall tiles back to rack");
-        // Restore tile in play to the player rack
-        foreach (var tileInPlay in WordInPlay)
-        {
-            TilesInRack.Add(tileInPlay.Tile);
-            actionsToRunAfterRender.Add((JS_SetTileForDrop, tileInPlay.Tile.ID));
-            var squareToClear = currentGame.PlayingBoard.Get(tileInPlay.BoardPosition);
-            squareToClear.Tile = null;
-            tileInPlay.Tile.MoveScore = null;
-            tileInPlay.Tile.TileInRack = true;
-            if (tileInPlay.Tile.Score == 0) tileInPlay.Tile.SetBlankLetter(' ');
-            await InvokeAsync(StateHasChanged); // Notify of removed tile
-        }
+        //Console.WriteLine("Recall all placed tiles back to rack");
+        // Recall all the tiles that are in play to the player rack
+        WordInPlay.ForEach(tileInPlay => RemoveTileFromPlay(tileInPlay));
         WordInPlay.Clear();
+        await InvokeAsync(StateHasChanged); // Notify of removed tiles
+    }
+
+    private async Task RecallLast()
+    {
+        //Console.WriteLine("Recall most recently placed tile back to rack");
+        // Recall a tile that is in play to the player rack, most recently played first
+        // and continuing until all the placed tiles have been withdrawn according
+        // to how many times the user pushes the Recall Last button
+        RemoveTileFromPlay(WordInPlay.Last());
+        WordInPlay.RemoveAt(WordInPlay.Count - 1);
+        EvaluateMove();
+        await InvokeAsync(StateHasChanged); // Notify of removed tile
+    }
+
+    private void RemoveTileFromPlay(TileInPlay tip)
+    {
+        TilesInRack.Add(tip.Tile);
+        actionsToRunAfterRender.Add((JS_SetTileForDrop, tip.Tile.ID));
+        var squareToClear = currentGame.PlayingBoard.Get(tip.BoardPosition);
+        squareToClear.Tile = null;
+        tip.Tile.MoveScore = null;
+        tip.Tile.TileInRack = true;
+        if (tip.Tile.Score == 0) tip.Tile.SetBlankLetter(' ');
     }
 
     private void StartSwap()
     {
         IsSwapping = true;
-        StateHasChanged();  // update buttons enable /disable
+        StateHasChanged();  // update buttons show/don't show
     }
 
     private async void StopSwap()
@@ -1065,53 +1128,61 @@ else
 
     private async Task DoSwap()
     {
+        IsSubmitting = true;
         try
         {
-            IsSubmitting = true;
-
             var response = await Http.PostAsJsonAsync<List<Tile>>($"/api/Exchange/{GameId}", TilesInRack);
             if (!response.IsSuccessStatusCode)
             {
-                MessageForLocalHuman = $"Unable to make move, exchange: {response.StatusCode.ToString()}";
+                IsSubmitting = false;
+                MessageForLocalHuman = $"Unable to exchange tiles : {response.StatusCode.ToString()}";
                 return;
             }
             var gameDto = await response.Content.ReadFromJsonAsync<GameDto>();
-
             await ApplyDownloadToGui(currentGame, gameDto);
         }
         catch (Exception ex)
         {
             IsSubmitting = false;
-            MyMove = true;
-
-            MessageForLocalHuman = $"Unable to make exchange: {ex.Message}";
+            MyMove = true;   // why set this, surely it must be MyMove if I'm swapping tiles ?
+            MessageForLocalHuman = $"Unable to exchange tiles : {ex.Message}";
             return;
-
         }
         IsSubmitting = false;
 
-        SwappingTiles.Clear();
+        // success
         IsSwapping = false;
+        SwappingTiles.Clear();
 
         StateHasChanged();
     }
-
 
     private async Task Play()
     {
         var nPlayed = WordInPlay.Count;
 
+        var placeMoveDto = new PlaceMoveDto();
+        placeMoveDto.WordInPlay = WordInPlay;
+        placeMoveDto.TilesInRack = TilesInRack;
+
+        IsSubmitting = true;
+        MessageForLocalHuman = "";
         try
         {
-            IsSubmitting = true;
-            MyMove = false;
+            // it's technically still our move until the PlaceMove operation completes successfully i think (?)
+            // so comment this out for now until some other circumstance shows it's needed
+            // review prompted having observed how new button organisation highlights MyMove isnt correct for 
+            // a brief instant after the owl is used to review a word. on closing the owl, the button bar shows
+            // buttons for the state before owl was shown and then flips quickly once MyMove is set correctly
+            // it actually turns out to have been an issue with use of showProfessorDialog
+            //MyMove = false;
 
-            var placeMoveDto = new PlaceMoveDto();
-            placeMoveDto.WordInPlay = WordInPlay;
-            placeMoveDto.TilesInRack = TilesInRack;
             var response = await Http.PostAsJsonAsync<PlaceMoveDto>($"/api/PlaceMove/{GameId}", placeMoveDto);
-            IsSubmitting = false;
-            MyMove = true;
+
+            //IsSubmitting = false;
+
+            // why set this to true after setting to false just a few lines above, exception related i guess
+            //MyMove = true;
 
             if (response.StatusCode == System.Net.HttpStatusCode.UnprocessableEntity)
             {
@@ -1119,33 +1190,32 @@ else
                 // This case should only be possible with no local word check.
                 MessageForLocalHuman = await response.Content.ReadAsStringAsync();
                 await PlaySound("Negative2.mp3");
-                return;
-
             }
             else if (!response.IsSuccessStatusCode)
             {
                 MessageForLocalHuman = $"Unable to make move, code: {response.StatusCode.ToString()}";
                 await PlaySound("Negative2.mp3");
-                return;
             }
-            var gameDto = await response.Content.ReadFromJsonAsync<GameDto>();
 
-            await ApplyDownloadToGui(currentGame, gameDto);
+            if (String.IsNullOrWhiteSpace(MessageForLocalHuman))
+            {
+                // it's deffo not my move now
+                MyMove = false;
+                Console.WriteLine($"Played {nPlayed}, have {TilesInRack.Count} tiles");
 
-            MessageForLocalHuman = ""; // Suppress text detail since it's highlighted on tiles (keep cleaner display)
+                // if this call is successful it will also result in MyMove being set correctly
+                var gameDto = await response.Content.ReadFromJsonAsync<GameDto>();
+                await ApplyDownloadToGui(currentGame, gameDto);
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Unable to make move: {ex}");
-            MessageForLocalHuman = $"Unable to make move: {ex.Message}";
-            return;
-
+            MessageForLocalHuman = $"Problem processing move: {ex.Message}";
+            Console.WriteLine($"Problem placing/retrieving move: {ex}");
         }
         IsSubmitting = false;
 
         StateHasChanged();
-
-        Console.WriteLine($"Played {nPlayed}, have {TilesInRack.Count} tiles");
     }
 
     private GameDto CloneGameDto(GameDto original)
@@ -1169,7 +1239,10 @@ else
         saveGameStateDto = new GameStateDto(currentGame);
 
         professorMessage = "Thinking ...";
+
         showProfessorDialog = true;
+        professorDialogOpen = true;
+
         if (!professorMoveValid)
         {
             StateHasChanged();
@@ -1192,16 +1265,18 @@ else
         if (displayComputerBoard)
         {
             initialLoad = true;
+            //Console.WriteLine("Displaying Owl Wisdom using currentMoveGameDto");
             await ApplyDownloadToGui(currentGame, currentMoveGameDto);
         }
 
         StateHasChanged();
-        while (showProfessorDialog)
+
+        while (professorDialogOpen)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(200));
         }
 
-        // owl flown - check if game has been updated
+        // the owl has flown - check if game has been updated
         bool theGameChanged = false;
         if (saveGameStateDto == null)
         {
@@ -1240,12 +1315,17 @@ else
 
         saveGameStateDto = null;
         showProfessorDialog = false;
+
         StateHasChanged();
     }
 
     private async Task ProfessorDialogOk()
     {
-        showProfessorDialog = false;  // Also exit wait loop in ShowProfessorAdvisor()
+        //showProfessorDialog = false;  // Also exit wait loop in ShowProfessorAdvisor()
+        // now use the following to control the while loop for the owl dialog
+        // because showProfessorDialog is also being used on the gui side to control
+        // display. the dual use of the variable was causing odd effects during update
+        professorDialogOpen = false;
     }
 
     private string GetProfessorMessage(int playerScore, int computerScore, ref bool displayComputerPlay)
@@ -1265,7 +1345,7 @@ else
         displayComputerPlay = true;
         if (playerScore > computerScore)
         {
-            var adjectives = new List<string> { "Dazzling", "Brilliant", "Magnificent", "Marvelous" };
+            var adjectives = new List<string> {"Dazzling", "Brilliant", "Magnificent", "Marvellous"};
             int randIndex = rnd.Next(adjectives.Count);
             string superlative = adjectives[randIndex];
 
@@ -1355,16 +1435,18 @@ else
     /// <returns></returns>
     private string ChatAlert()
     {
-        string chatAlert = "";
+        string chatAlert = "btn-secondary";
+        // chatAlert is now used for the style of the button
+        chatAlert = "--bs-btn-bg: var(--bs-gray-600); --bs-btn-hover-bg: var(--bs-gray-700); color: white;";
         if (highestChatSeen < Data.ChatList.Instance.Count)
         {
-            chatAlert = "chat-alert";
+            //chatAlert = "chat-alert";  // originally from css
+            //chatAlert = "pink";
+            chatAlert = "--bs-btn-bg: #e91e63; --bs-btn-hover-bg: #d81b60; color: white;";
         }
 
         return chatAlert;
     }
-
-
 
     private async Task ShowChat()
     {
@@ -1439,7 +1521,7 @@ else
     private async Task ApplyDownloadToGui(GameState newGame, GameDto gameDto)
     {
         UpdateGameStateFromDto.UpdateGameState(newGame, gameDto.GameState_Dto);
-        if (lastMoveCountProcessed > -1)
+        if (lastMoveCountProcessed > -1 && saveGameStateDto == null)
         {
             Console.WriteLine(" ");
             Console.WriteLine("Last MoveCount processed (local) " + lastMoveCountProcessed + ", Game MoveCount (current) " + newGame.MoveCount);
@@ -1456,6 +1538,7 @@ else
             MessageForLocalHuman = $"Lost game consistency: player Email";
             return;
         }
+        //Console.WriteLine(myPlayer.Name + " my move = " + MyMove + ", my turn (from dto) = " + myPlayer.MyTurn);
         MyMove = myPlayer.MyTurn;
 
         // check if we are in a strigiform situation and act accordingly
