@@ -121,15 +121,17 @@ textarea {
     background: #f7f7f7
 }
 
+/*
 .chat-alert {
     background-color: greenyellow;
 }
+
 
 .next-game-nudge {
     color: white;
     background-color: purple;
 }
-
+*/
 
 .professor-owl {
     display: flex;
