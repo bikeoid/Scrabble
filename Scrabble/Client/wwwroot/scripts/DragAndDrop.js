@@ -70,9 +70,9 @@ function handleWindowSize()
     wszLogMessage("RM - offsetWidth=" + recentMovesColumn.offsetWidth + ", offsetHeight=" + recentMovesColumn.offsetHeight);
 
     var gamePlayRow = document.getElementById('game-play-row');
-    var gamePlayRowHeight = gamePlayRow.offsetHeight;
+    var gamePlayRowHeight = Math.max(gamePlayRow.offsetHeight, 48);
     var actionButtonsRow = document.getElementById('action-buttons-row');
-    var actionButtonsRowHeight = actionButtonsRow.offsetHeight;
+    var actionButtonsRowHeight = Math.max(actionButtonsRow.offsetHeight, 32);
     wszLogMessage("GP/AB - gamePlayRowHeight=" + gamePlayRowHeight + ", actionButtonsRowHeight=" + actionButtonsRowHeight);
 
     var isLandscape = false;
@@ -751,7 +751,7 @@ export async function handleDrop(e) {
     // 4.square with tile -> square with tile
     //  events (2) : drag Tile "A" -> drop Tile "B", drag Tile "A" -> drop Square
     //
-    // There is a fifth scenario which involves only tiles on the rack when re-organising the order
+    // There is a fifth scenario which involves only tiles on the rack when re-ordering
     // 5.rack tile -> rack tile
     // events (1) : drag Tile "A" -> drop Tile "B"
 
@@ -781,7 +781,7 @@ export async function handleDrop(e) {
     //    return;
     //}
 
-    // let dotnet handle everthing, which allows for the tiles to have event handlers re-instated via
+    // let dotnet handle everything, which allows for the tiles to have event handlers re-instated via
     // calls to SetTileForDrop() method
     await DotNet.invokeMethodAsync("Scrabble.Client", "HandleDropAsync", dragId, dropId);
 }
