@@ -1,6 +1,8 @@
 ﻿@inherits LayoutComponentBase
 <CascadingBlazoredModal/>
 
+<link rel="stylesheet" href="@Assets["css/Scrabble.css"]" />
+
 <div class="page">
     <div class="sidebar" id="sidebar" style="@IconMenuCssClass">
         <NavMenu/>  <!-- ShowIconMenu="ToggleIconMenu"/> -->
@@ -18,8 +20,6 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
-
-<link rel="stylesheet" href="@Assets["css/Scrabble.css"]" />
 
 @code {
     private bool _iconMenuActive { get; set; }

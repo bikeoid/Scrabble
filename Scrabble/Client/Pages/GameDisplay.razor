@@ -38,6 +38,57 @@
 }
 else
 {
+    <!--
+
+    What follows are two div blocks to handle the modal dialogs for user confirmation
+    of the Pass and Resign options
+    It feels like a lot of code duplication and that it should be possible somehow to have
+    a single block with some parameters for title, background colour etc. I tried but can't
+    make it work at the moment
+    Possibly also the code could be extracted and put in a separate file e.g. The ConfirmationDialogue.razor ?
+
+    string mtTextColor = ""; string mtBackgroundColor = ""; string mtText = ""; EventCallback mtYesFunction = default;
+                                        mtText = "Pass";
+                                        mtBackgroundColor = "#ff9800";
+                                        mtTextColor = "text-black";
+                                        mtYesFunction = EventCallback.Factory.Create(this, DoPass);
+    -->
+    <div class="modal fade" id="ConfirmationModal_Pass" data-bs-backdrop="static" tabindex="-1">
+	    <div class="modal-dialog modal-dialog-centered modal-sm">
+		    <div class="modal-content">
+			    <div class=@($"modal-header text-black") style=@($"background-color: #ff9800; overflow:hidden;")>
+				    <h1 class="modal-title fs-5">Pass</h1>
+				    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			    </div>
+			    <div class="modal-body">
+				    Are you sure ?
+			    </div>
+			    <div class="modal-footer">
+				    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @onclick=DoPass>Yes</button>
+				    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+			    </div>
+		    </div>
+	    </div>
+    </div>
+
+    <div class="modal fade" id="ConfirmationModal_Resign" data-bs-backdrop="static" tabindex="-1">
+	    <div class="modal-dialog modal-dialog-centered modal-sm">
+		    <div class="modal-content">
+			    <div class="modal-header bg-danger text-white" style="overflow:hidden;">
+				    <h1 class="modal-title fs-5">Resign</h1>
+				    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			    </div>
+			    <div class="modal-body">
+				    Are you sure ?
+			    </div>
+			    <div class="modal-footer">
+				    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @onclick=DoResign>Yes</button>
+				    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+			    </div>
+		    </div>
+	    </div>
+    </div>
+
     <div class="container-fluid">
         <div class="row mb-3 d-flex flex-nowrap"> <!-- removed "overflow-scroll" -->
             <!-- Player total scores on the left, current player at the top, next player below -->
@@ -227,7 +278,7 @@ else
                         {
                             @if (TilesInRack.Count > 0)
                             {
-                                if (!reloadCompletedGame)
+                                if (!reloadCompletedGame && currentGame.FinalGameStatus == null)
                                 {
                                     <button @onclick=Shuffle disabled="@DisabledShuffle()">Shuffle</button>
                                 }
@@ -237,7 +288,7 @@ else
                                     <UITile_2 @key="TilesInRack[index].ID" TilePiece="TilesInRack[index]"></UITile_2>
                                 }
                             }
-                            @if (currentGame.TileBag.Inventory.Count > 0 && !reloadCompletedGame)
+                            @if (currentGame.TileBag.Inventory.Count > 0 && !reloadCompletedGame && currentGame.FinalGameStatus == null)
                             {
                                 <!-- <div class="tile-bag-area"> -->
                                     <div class="tile-bag">
@@ -272,21 +323,22 @@ else
                                 @if (IsSwapping)
                                 {
                                     <span>Select tiles for exchange</span>
-                                    <button class=@($"btn btn-warning {button_standard_settings}")
-                                            @onclick=StopSwap>Cancel</button>
                                     if (SwappingTiles.Count > 0 && SwappingTiles.Count <= currentGame.TileBag.Inventory.Count)
                                     {
-                                        <button class=@($"btn btn-danger {button_standard_settings}")
+                                        <button class=@($"btn btn-success {button_standard_settings}")
                                                 @onclick=DoSwap>Swap</button> 
                                     }
+                                    <button class=@($"btn btn-danger {button_standard_settings}")
+                                            @onclick=StopSwap>Cancel</button>
                                 }
                                 else
                                 {
                                     if (WordInPlay.Count == 0)
                                     {
-                                        <button class=@($"btn {button_standard_settings}")
+                                        <button type="button" class=@($"btn {button_standard_settings}")
                                                 style="--bs-btn-bg: var(--bs-orange); --bs-btn-hover-bg: #fb8c00; color: black;"
-                                                @onclick=Pass>Pass</button>
+                                                data-bs-toggle="modal" data-bs-target="#ConfirmationModal_Pass">Pass
+                                        </button>
                                         if (CanSwap)
                                         {
                                             <button class=@($"btn btn-warning {button_standard_settings}")
@@ -309,7 +361,8 @@ else
                                                 @onclick=RecallLast>Recall Last [@WordInPlay.Count]</button>
                                     }
                                     <button class=@($"btn btn-danger {button_standard_settings}")
-                                            @onclick=Resign>Resign</button>
+                                            data-bs-toggle="modal" data-bs-target="#ConfirmationModal_Resign">Resign
+                                    </button>
                                 }
                             }
 
@@ -320,7 +373,7 @@ else
                             }
 
                             <!-- don't get distracted if you are swapping tiles -->
-                            @if (!IsSwapping)
+                            @if (!IsSwapping && chatEnabled)
                             {
                                 <button class=@($"btn {button_standard_settings}")
                                         style=@($"{ChatAlert()}")
@@ -469,6 +522,7 @@ else
     
     private bool initialLoad = true;
     private bool reloadCompletedGame = false;
+    private bool chatEnabled = false;
 
     private HubConnection hubConnection;
     private Data.ChatParameters chatParameters;
@@ -607,6 +661,13 @@ else
         // so that buttons can be suppressed from the display
         if (currentGame.FinalGameStatus != null)
             reloadCompletedGame = true;
+
+        // count other humans to decide whether to enable/display chat button
+        int nOtherHumans = 0;
+        chatEnabled = false;
+        foreach (var player in currentGame.Players)
+            if (player is HumanPlayer && player.Email != myEmail) nOtherHumans++;
+        if (nOtherHumans > 0) chatEnabled = true;
 
         Console.WriteLine($"myName={myName}");
         Console.WriteLine("lastMoveCountProcessed = " + lastMoveCountProcessed);  // initialization 
@@ -1201,7 +1262,7 @@ else
             {
                 // it's deffo not my move now
                 MyMove = false;
-                Console.WriteLine($"Played {nPlayed}, have {TilesInRack.Count} tiles");
+                Console.WriteLine($"Played {nPlayed}, have {TilesInRack.Count} tiles. Bag has {currentGame.TileBag.Inventory.Count}.");
 
                 // if this call is successful it will also result in MyMove being set correctly
                 var gameDto = await response.Content.ReadFromJsonAsync<GameDto>();
@@ -1382,7 +1443,6 @@ else
         return null;
     }
 
-
     private async Task PerformNoMove(bool resigning)
     {
         try
@@ -1410,17 +1470,33 @@ else
         StateHasChanged();
     }
 
+    private async Task DoPass()
+    {
+        await PerformNoMove(false);
+    }
+    private async Task DoResign()
+    {
+        await PerformNoMove(true);
+    }
 
+    /*
     private async Task Pass()
     {
         var result = await Modal.Show<ConfirmationDialogue>("Are you sure you want to pass?").Result;
         if (!result.Cancelled)
         {
-
             await PerformNoMove(false);
-
         }
     }
+    private async Task Resign()
+    {
+        var result = await Modal.Show<ConfirmationDialogue>("Are you sure you want to resign?").Result;
+        if (!result.Cancelled)
+        {
+            await PerformNoMove(true);
+        }
+    }
+    */
 
     private void Shuffle()
     {
@@ -1461,10 +1537,10 @@ else
         parameters.Add("ChatParams", chatParameters);
 
         var options = new ModalOptions()
-            {
+        {
                 Position = ModalPosition.Custom,
                 PositionCustomClass = "chat-position"
-            };
+        };
 
         var result = await Modal.Show<Chat>("Chat Messages", parameters, options).Result;
         chatParameters = null;
@@ -1472,16 +1548,6 @@ else
         // Update max chat seen in database
         await hubConnection.InvokeAsync("ReceiveMaxChat", highestChatSeen, GameId);
     }
-
-    private async Task Resign()
-    {
-        var result = await Modal.Show<ConfirmationDialogue>("Are you sure you want to resign?").Result;
-        if (!result.Cancelled)
-        {
-            await PerformNoMove(true);
-        }
-    }
-
 
     private async Task NextUnplayedGame()
     {

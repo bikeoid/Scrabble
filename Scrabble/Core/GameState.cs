@@ -134,7 +134,7 @@ namespace Scrabble.Core.Types
                 p.Tiles.Add(tile);
                 tile.TileInRack = true;
             }
-            Console.WriteLine($"{p.Name} has {startCount}, gave {givenTiles.Count}, result is {p.Tiles.Count} tiles");
+            Console.WriteLine($"{p.Name} has {startCount}, gave {givenTiles.Count}, result is {p.Tiles.Count} tiles. Bag has {TileBag.Inventory.Count}.");
             p.TilesUpdated();
         }
 
@@ -487,12 +487,12 @@ namespace Scrabble.Core.Types
                 if (player.IsActive && !player.HasTiles) return true;
             }
 
-            bool all_active_players_passed_limit = true;
             // set to 200 while i test with a hung game :-)
             int pass_limit = 3;
+            bool all_active_players_passed_limit = true;
             foreach (var player in this.players)
             {
-                if (player.PlayerPasses >= pass_limit) Console.WriteLine(player.Name + " breached pass move count limit of " + player.PlayerPasses);
+                if (player.PlayerPasses >= pass_limit) Console.WriteLine(player.Name + " breached pass move count limit of " + (pass_limit - 1));
                 //Console.WriteLine(player.Name + " - " + player.PlayerPasses);
                 if (player.IsActive && player.PlayerPasses < pass_limit) all_active_players_passed_limit = false;
             }
