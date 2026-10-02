@@ -165,6 +165,17 @@ namespace Scrabble.Tests.AI
                 Assert.True(moves[i-1].Score >= moves[i].Score,
                     $"Move {i-1} ({moves[i-1].Score}) < move {i} ({moves[i].Score})");
         }
+
+        [Fact]
+        public void BestOpeningMove()
+        {
+            var dawg = Dawg.FromWords(new[] { "RONZER", "ZONER"});
+            var moves = new MoveGenerator(dawg).GenerateAll(
+                new AiBoard(), new Rack(new[] { 'R', 'O', 'N', 'Z', 'E', 'R', 'O' }));
+            for (int i = 1; i < moves.Count; i++)
+                Assert.True(moves[i - 1].Score >= moves[i].Score,
+                    $"Move {i - 1} ({moves[i - 1].Score}) < move {i} ({moves[i].Score})");
+        }
     }
 
     // ==========================================================================

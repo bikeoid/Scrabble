@@ -119,20 +119,25 @@ namespace Scrabble.Core.AI
                 else
                     continue;
 
-                int nextRow = horizontal ? anchorRow  : anchorRow  - (partialWord.Length + 1);
-                int nextCol = horizontal ? anchorCol - (partialWord.Length + 1) : anchorCol;
-
-                placements.Add(new TilePlacement
+                // LeftPart, replacing the nextRow/nextCol + placements.Add block
+                int dr = horizontal ? 0 : 1, dc = horizontal ? 1 : 0;
+                for (int i = 0; i < placements.Count; i++)
                 {
-                    Row = nextRow, Col = nextCol, Letter = letter, IsBlank = usedBlank
-                });
+                    var p = placements[i];
+                    placements[i] = new TilePlacement { Row = p.Row - dr, Col = p.Col - dc, Letter = p.Letter, IsBlank = p.IsBlank };
+                }
+                placements.Add(new TilePlacement { Row = anchorRow - dr, Col = anchorCol - dc, Letter = letter, IsBlank = usedBlank });
 
-                LeftPart(board, rack, child, partialWord + letter,
-                         anchorRow, anchorCol, nextRow, nextCol,
-                         horizontal, crossChecks, crossSums,
+                LeftPart(board, rack, child, partialWord + letter, anchorRow, anchorCol,
+                         anchorRow - dr, anchorCol - dc, horizontal, crossChecks, crossSums,
                          limit - 1, placements, results);
 
                 placements.RemoveAt(placements.Count - 1);
+                for (int i = 0; i < placements.Count; i++)
+                {
+                    var p = placements[i];
+                    placements[i] = new TilePlacement { Row = p.Row + dr, Col = p.Col + dc, Letter = p.Letter, IsBlank = p.IsBlank };
+                }
 
                 if (usedBlank) rack.ReturnBlank();
                 else rack.Return(letter);
@@ -156,13 +161,6 @@ namespace Scrabble.Core.AI
                 // Off the board -- record if terminal
                 if (node.IsTerminal && placements.Count > 0)
                 {
-                    var validationResult = _validator.Validate(board, placements, null);
-                    if (!validationResult.IsValid)
-                    {
-                        // This can happen if the last placed tile forms an invalid perpendicular word.
-                        // In that case, we shouldn't record this move.
-                        return;
-                    }
                     RecordMove(board, placements, word, anchorRow, anchorCol, horizontal, results);
                 }
                 return;
@@ -191,15 +189,8 @@ namespace Scrabble.Core.AI
             int ccMask = crossChecks[row, col];
 
             // Record if we can stop here (node is terminal and we've played ≥1 new tile)
-            if (node.IsTerminal && placements.Count > 0)
+            if (node.IsTerminal && placements.Count > 0 && (row, col) != (anchorRow, anchorCol))
             {
-                var validationResult = _validator.Validate(board, placements, null);
-                if (!validationResult.IsValid)
-                {
-                    // This can happen if the last placed tile forms an invalid perpendicular word.
-                    // In that case, we shouldn't record this move.
-                    return;
-                }
                 RecordMove(board, placements, word, anchorRow, anchorCol, horizontal, results);
             }
 
