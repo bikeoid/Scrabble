@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Security.AccessControl;
@@ -124,17 +125,20 @@ namespace Scrabble.Core.Types
             if (TileBag.IsEmpty)
             {
                 Console.WriteLine("No tiles in the bag");
-                Console.WriteLine($"{p.Name} has {p.Tiles.Count}");
+                Console.WriteLine($"{p.Name} has {p.Tiles.Count} [{string.Join(", ", p.Tiles.Select(t => t.Letter))}]");
                 return;
-            }   
+            }
+
             var givenTiles = TileBag.Take(n);
+
             int startCount = p.Tiles.Count;
             foreach (var tile in givenTiles)
             {
                 p.Tiles.Add(tile);
                 tile.TileInRack = true;
             }
-            Console.WriteLine($"{p.Name} has {startCount}, gave {givenTiles.Count}, result is {p.Tiles.Count} tiles. Bag has {TileBag.Inventory.Count}.");
+
+            Console.WriteLine($"{p.Name} has {startCount}, gave {givenTiles.Count} => {p.Tiles.Count} tiles [{string.Join(", ", p.Tiles.Select(t => t.Letter))}]. Bag has {TileBag.Inventory.Count}.");
             p.TilesUpdated();
         }
 
@@ -561,12 +565,13 @@ namespace Scrabble.Core.Types
                 if (player.IsActive && player.Score == max) preBonusHighScores.Add(player);
             }
 
-
             // Penalize / bonus for unplayed tile(s)
             Player firstFinisher = null;
             int bonus = 0;
             foreach (var player in this.players)
             {
+                // contrib each player makes to the winner's bonus
+                int pbonus = 0;
                 player.FinalizeScore();  // Subtract unplayed tiles
                 if (player.IsActive && player.Tiles.Count == 0)
                     firstFinisher = player;
@@ -574,15 +579,18 @@ namespace Scrabble.Core.Types
                 {
                     foreach (var leftoverTile in player.Tiles)
                     {
-                        bonus += leftoverTile.Score;
+                        pbonus += leftoverTile.Score;
                     }
+                    Console.WriteLine("Player " + player.Name + " sum of leftover tile values is " + pbonus);
+                    bonus += pbonus;
                 }
             }
+            Console.WriteLine("Total tile bonus for the first finisher is " + bonus);
             if (firstFinisher != null)
             {
                 firstFinisher.AddScore(bonus);
+                Console.WriteLine("First to finish player " + firstFinisher.Name + " adjusted score is " + firstFinisher.Score);
             }
-
 
             // Check for winner or draw
             // Determine new max on adjusted scores

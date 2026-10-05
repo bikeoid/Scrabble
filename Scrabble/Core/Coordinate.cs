@@ -24,6 +24,7 @@ namespace Scrabble.Core.Config
             this.x = x;
             this.y = y;
         }
+        public override string ToString() => $"({x},{y})";
 
         public void Print()
         {

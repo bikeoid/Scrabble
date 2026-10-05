@@ -76,13 +76,17 @@ namespace Scrabble.Core.Types
         /// </summary>
         public void FinalizeScore()
         {
+            int unadj_score = Score;
             int sum = 0;
             foreach (var tile in Tiles)
             {
                 sum += tile.Score;
             }
 
+            // adjust for leftover tiles
             Score -= sum;
+            Console.WriteLine("Player " + Name + " score " + unadj_score + " minus value of " +
+                              Tiles.Count + " leftover tiles [" + sum + "] -> " + Score);
         }
 
         public void TakeTurn(ITurnImplementor implementor, Turn t)

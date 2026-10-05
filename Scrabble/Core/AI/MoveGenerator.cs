@@ -18,6 +18,8 @@ namespace Scrabble.Core.AI
         private readonly Dawg _dawg;
         private MoveValidator _validator = null;
 
+        private bool _debug = false;
+
         public MoveGenerator(Dawg dawg) { 
             _dawg = dawg; 
             _validator = new MoveValidator(dawg);
@@ -33,10 +35,20 @@ namespace Scrabble.Core.AI
         {
             var moves = new List<ScrabbleMove>();
 
+            // let's see what the board and rack look like to make sure the different calling
+            // methods are passing the right information to the move generator
+            if (_debug)
+            {
+                Console.WriteLine("(MoveGenerator) <GenerateAll>");
+                Console.WriteLine("[" + string.Join(", ", rack.Letters().Select(c => c.ToString())) + "]");
+                board.Show();
+            }
+
             GenerateDirection(board, rack, horizontal: true,  moves);
             GenerateDirection(board, rack, horizontal: false, moves);
 
             moves.Sort((a, b) => b.Score.CompareTo(a.Score));
+
             return moves;
         }
 
@@ -48,6 +60,11 @@ namespace Scrabble.Core.AI
             var crossChecks = board.ComputeCrossChecks(_dawg, horizontal);
             var crossSums   = board.ComputeCrossSums(horizontal);
             var anchors     = board.GetAnchors();
+
+            if (_debug)
+                Console.WriteLine("Placing tiles {0} and cross-checking in the {1} direction for {2} anchor point{3}",
+                                  horizontal ? "N->S" : "W->E", horizontal ? "HORIZONTAL" : "VERTICAL",
+                                  anchors.Count, anchors.Count == 1 ? "" : "s");
 
             foreach (var (anchorRow, anchorCol) in anchors)
             {
@@ -226,7 +243,8 @@ namespace Scrabble.Core.AI
 
         // -- Helper: record a completed move -----------------------------------
 
-        private static void RecordMove(
+        // was static - why ?
+        private void RecordMove(
             AiBoard board,
             List<TilePlacement> placements,
             string word,
@@ -258,6 +276,16 @@ namespace Scrabble.Core.AI
 
             int score = MoveScorer.Score(board, pCopy, horizontal);
 
+            // OK - start here. this is the definitive statement of what the move generator has found.
+            // it can be used to compare to any logging done later relating to moves that have been analysed or placed
+            // it can be written to the server console output or the browser console output and will be readable in either case
+            // because we're using 'across' and 'down' to indicate word direction instead of arrows.
+            // rows and columns are swapped compared to the board display, so display in a way human can read easily and
+            // tie up with the board. same for the horizontal flag
+            if (_debug)
+                Console.WriteLine("{0} @ r{1}.c{2} {3} [{4}pts, {5} tiles], anchor r{6}.c{7}",
+                                  word, startCol, startRow, horizontal ? "down" : "across",
+                                  score, pCopy.Count, anchorCol, anchorRow);
 
             results.Add(new ScrabbleMove
             {

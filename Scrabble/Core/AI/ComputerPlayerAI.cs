@@ -15,13 +15,16 @@
 // The DAWG is built once from the existing dictionary file already used by the
 // game (TWL06 / SOWPODS).  Point DictionaryPath at the same file.
 
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Scrabble.Core.AI
 {
@@ -34,15 +37,18 @@ namespace Scrabble.Core.AI
         // -- Configuration -----------------------------------------------------
 
         /// <summary>
-        /// Path to the plain-text word list (one word per line, any case).
-        /// Defaults to the TWL06 file shipped with the project.
+        /// Path to the plain-text word list. See Dawg.cs for details on how the
+        /// content is validated
+        /// Specific file is set in appsettings.json for both client and server sides
+        /// to allow for regional variation e.g. TWL (US), Collins (UK) etc without
+        /// need for code change and re-compile
         /// </summary>
-        public string DictionaryPath { get; set; } =
-            Path.Combine(AppContext.BaseDirectory, "wwwroot", "TWL06a.txt");  // Server side path only
+        public string DictionaryPath { get; set; }
 
         // -- Internal state ----------------------------------------------------
 
         private Dawg?          _dawg;
+
         private MoveGenerator? _generator;
         private MoveValidator? _validator;
         private readonly SemaphoreSlim _initLock = new(1, 1);
@@ -64,17 +70,30 @@ namespace Scrabble.Core.AI
             try
             {
                 if (_dawg is not null) return;
+
                 if (memoryStream == null)
                 {
-                    _logger.LogInformation("Building DAWG from {Path}", DictionaryPath);
+                    // Server side load
+                    var config = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+                    string DictionaryName = config["ScrabbleDictionary"];
+                    if (String.IsNullOrWhiteSpace(DictionaryName))
+                    {
+                        _logger.LogWarning("Dictionary file name not supplied in appsettings.json");
+                        return;
+                    }
+                    DictionaryPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", DictionaryName);
+                    _logger.LogInformation("Building DAWG from file {Path}", DictionaryPath);
                     _dawg = await Task.Run(() => Dawg.FromFile(DictionaryPath));
-                } else
+                }
+                else
                 {
                     _logger.LogInformation("Building DAWG from memory stream");
                     _dawg = await Task.Run(() => Dawg.FromMemoryStreamAsync(memoryStream));
                 }
+
                 _generator = new MoveGenerator(_dawg);
                 _validator = new MoveValidator(_dawg);
+
                 _logger.LogInformation("DAWG ready.");
             }
             finally
@@ -94,7 +113,7 @@ namespace Scrabble.Core.AI
         /// Compute the computer's move.
         /// </summary>
         /// <param name="boardLetters">
-        ///   15x15 array of characters.  '\0' (or ' ') = empty; uppercase letter = placed tile.
+        ///   15x15 array of characters.  (char)0 or ' ' = empty; uppercase letter = placed tile.
         /// </param>
         /// <param name="boardBlanks">
         ///   15x15 bool array; true = the tile at that square was played as a blank.
@@ -122,7 +141,7 @@ namespace Scrabble.Core.AI
             // Generate all legal moves
             var moves = _generator!.GenerateAll(board, rack);
 
-            _logger.LogDebug("Generated {Count} legal moves at skill {Skill}", moves.Count, skill);
+            _logger.LogInformation("Generated {Count} legal moves at skill level: {Skill}", moves.Count, skill);
 
             if (moves.Count == 0)
             {
@@ -133,7 +152,8 @@ namespace Scrabble.Core.AI
             // Select move according to skill level
             var chosen = MoveSelector.Select(moves, skill, board, rack);
 
-            _logger.LogInformation("Computer played: {Move}", chosen);
+            _logger.LogInformation("Computer played: {Move}", chosen.PrintMe());
+
             return chosen;
         }
 
@@ -158,7 +178,7 @@ namespace Scrabble.Core.AI
             for (int c = 0; c < AiBoard.Size; c++)
             {
                 char ch = letters[r, c];
-                if (ch != '\0' && ch != ' ')
+                if (ch != (char)0 && ch != ' ')
                     board.PlaceLetter(r, c, char.ToUpperInvariant(ch), blanks[r, c]);
             }
             return board;
