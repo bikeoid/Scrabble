@@ -3,6 +3,8 @@
 @using System.Net
 @using System.Linq;
 
+@using Scrabble.Core.AI;
+
 <div class="container">
     <div class="alert alert-danger" role="alert" hidden="@HideAlert">
         @errorMessage
@@ -30,8 +32,8 @@
                 if (playerInfo.Player.IsComputerPlayer && playerInfo.Selected)
                 {
                     <fieldset>
-                        <InputRadioGroup @bind-Value=@proficiency.Level>
-                            @foreach (var skilllevel in Enum.GetValues<Level>())
+                        <InputRadioGroup @bind-Value=@proficiency.ProficiencyName>
+                            @foreach (var skilllevel in Enum.GetValues<ProficiencyName>())
                             {
                                 var disabled_flag = !@playerInfo.Selected;
                                 <div class="computerlevel-indent">
@@ -174,8 +176,9 @@
             var uri = "";
             if (hasComputerPlayer)
             {
-                Console.WriteLine("Computer player skill level is '" + proficiency.Level + "'");
-                uri = $"/api/NewGame?skill={(int)proficiency.Level}&owl={(bool)owlSelected}";
+                int skill_level = SkillNameMap.toSkillLevel(proficiency.ProficiencyName);
+                Console.WriteLine("Computer player skill level is '" + proficiency.ProficiencyName + "' [" + skill_level + "]");
+                uri = $"/api/NewGame?skill={skill_level}&owl={(bool)owlSelected}";
             }
             else
             {
@@ -208,15 +211,7 @@
 
     public class Proficiency
     {
-        public Level Level { get; set; } = Level.Intermediate; // Default selection
-    }
-
-    public enum Level
-    {
-        Beginner,
-        Intermediate,
-        Advanced,
-        Expert
+        public ProficiencyName ProficiencyName { get; set; } = ProficiencyName.Intermediate; // Default selection;
     }
 
     private Proficiency proficiency = new Proficiency();

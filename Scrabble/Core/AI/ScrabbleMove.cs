@@ -34,8 +34,11 @@ namespace Scrabble.Core.AI
         public int CompareTo(ScrabbleMove? other) =>
             other is null ? 1 : Score.CompareTo(other.Score);
 
-        public override string ToString() =>
-            $"{Word} at ({StartRow},{StartCol}) {(IsHorizontal ? "->" : "↓")} [{Score}pts]";
+        // u2192 is the unicode character for right arrow, u2193 is the unicode character for down arrow
+        // works ok in browser but not in terminal window, so using words instead of unicode characters for the console output
+        public override string ToString() => $"ToString() : !!!CLANG!!! - Use PrintMe() instead";
+
+        public string PrintMe() => $"{Word} @ r{StartCol}.c{StartRow} {(IsHorizontal ? "down" : "across")} [{Score}pts, {Placements.Count} tiles]";
     }
 
     /// <summary>

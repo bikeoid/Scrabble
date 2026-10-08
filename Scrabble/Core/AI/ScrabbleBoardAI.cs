@@ -42,10 +42,18 @@ namespace Scrabble.Core.AI
 
     public sealed class BoardCell
     {
-        public char Letter { get; set; }        // '\0' = empty
+        public char Letter { get; set; }        // (char)0 = empty
         public bool IsBlank { get; set; }       // tile is a blank (worth 0)
         public Premium Premium { get; set; }
-        public bool IsOccupied => Letter != '\0';
+        public bool IsOccupied => Letter != (char)0;
+
+        public BoardCell()
+        {
+            Letter = (char)0;
+            IsBlank = false;
+            Premium = Premium.None;
+            //Console.WriteLine(IsOccupied ? "Occupied" : "Empty");
+        }
     }
 
     // -- Rack -----------------------------------------------------------------
@@ -59,7 +67,7 @@ namespace Scrabble.Core.AI
         {
             foreach (char t in tiles)
             {
-                if (t == '?' || t == '\0' || t == ' ')
+                if (t == '?' || t == (char)0 || t == ' ')
                 {
                     _counts[26]++;
                 }
@@ -137,12 +145,28 @@ namespace Scrabble.Core.AI
 
         public bool IsEmpty => !AnyOccupied();
 
+        public void Show()
+        {
+            // in (x, y) order to match the on-screen display
+            for (int r = 0; r < Size; r++)
+            {
+                for (int c = 0; c < Size; c++)
+                {
+                    string ch = _cells[c, r].IsOccupied ? " " + _cells[c, r].Letter.ToString() : " .";
+                    Console.Write(ch);
+                }
+                Console.WriteLine();
+            }
+        }
+
         private bool AnyOccupied()
         {
             for (int r = 0; r < Size; r++)
                 for (int c = 0; c < Size; c++)
-                    if (_cells[r, c].IsOccupied) return false;
-            return true;
+                {
+                    if (_cells[r, c].IsOccupied) return true;
+                }
+            return false;
         }
 
         public bool InBounds(int row, int col) =>
@@ -187,7 +211,7 @@ namespace Scrabble.Core.AI
 
         public void ClearCell(int row, int col)
         {
-            _cells[row, col].Letter = '\0';
+            _cells[row, col].Letter = (char)0;
             _cells[row, col].IsBlank = false;
         }
 

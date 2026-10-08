@@ -102,7 +102,8 @@ namespace Scrabble.Core.Types
         public void InvokeTurn(ITurnImplementor implementor)
         {
             var skill = (Scrabble.Core.AI.SkillLevel)Skill;
-            Console.WriteLine($"The {Name} is thinking with skill level '{skill}'...");
+            var skillEnum = SkillNameMap.toProficiencyName(skill);
+            Console.WriteLine($"The {Name} is thinking with skill level '{skillEnum}' [{Skill}-{skill}] ...");
 
             var boardLetters = new char[15, 15];
             var boardBlanks = new bool[15, 15];
@@ -121,7 +122,7 @@ namespace Scrabble.Core.Types
                 {
                     var logger = LoggerFactory.Create(builder => { }).CreateLogger<ComputerPlayer>();
                     logger.LogError(ex, "Error making computer move");
-
+                    Console.WriteLine(ex.ToString());
                 };
             }
 
@@ -134,16 +135,27 @@ namespace Scrabble.Core.Types
             }
             else
             {
+                Console.WriteLine("ComputerPlayer Move: " + move.PrintMe());
+                // this is essentially the same code as in ComputerMoveSuggestion.cs for the OWL move
                 // Coordinates are not sorted in move.Placements, so sort them to ensure correct order of tile placements in PlaceMove
                 var coordinate = new List<Coordinate>();
                 var tile = new List<Tile>();
 
-                foreach(var placeTile in move.Placements)
+                foreach (var placeTile in move.Placements)
                 {
-                    coordinate.Add(new Coordinate(placeTile.Col, placeTile.Row));
+                    Console.WriteLine($"letter={placeTile.Letter}, x={placeTile.Row}, y={placeTile.Col}");
+                    // (r,c) -> (x,y)
+                    Coordinate crd = new Coordinate(placeTile.Row, placeTile.Col);
+                    coordinate.Add(crd);
                     tile.Add(FindTileInRack((GameState)implementor, placeTile));
+                    //Console.WriteLine($"Placing tile {placeTile.Letter} at {crd.ToString()}");
                 }
                 ;
+
+                // not sure this sorting is needed or even correct based on the IsHorizontal flag value
+                // since IsHorizontal is false for a horizontal word
+                Console.WriteLine("Place tiles @ " + string.Join(", ", coordinate.Select(coord => coord.ToString())));
+                Console.WriteLine(move.IsHorizontal ? "Horizontal" : "Vertical");
                 if (move.IsHorizontal)
                 {
                     coordinate = coordinate.OrderBy(coord => coord.X).ToList();
@@ -152,6 +164,8 @@ namespace Scrabble.Core.Types
                 {
                     coordinate = coordinate.OrderBy(coord => coord.Y).ToList();
                 }
+                //Console.WriteLine("Place tiles (sorted) @ " + string.Join(", ", coordinate.Select(coord => coord.ToString())));
+
                 var moveTiles = new List<(Coordinate coord, Tile tile)>();
                 for (int i = 0; i < coordinate.Count; i++) 
                 {
@@ -236,8 +250,11 @@ namespace Scrabble.Core.Types
         {
             foreach (var occupied in gameState.PlayingBoard.OccupiedSquares())
             {
-                boardLetters[occupied.coord.Y, occupied.coord.X] = occupied.square.Tile.Letter;
-                boardBlanks[occupied.coord.Y, occupied.coord.X] = occupied.square.Tile.Score == 0; // Blank tiles have score = 0
+                // why were these swapped ?
+                //boardLetters[occupied.coord.Y, occupied.coord.X] = occupied.square.Tile.Letter;
+                //boardBlanks[occupied.coord.Y, occupied.coord.X] = occupied.square.Tile.Score == 0; // Blank tiles have score = 0
+                boardLetters[occupied.coord.X, occupied.coord.Y] = occupied.square.Tile.Letter;
+                boardBlanks[occupied.coord.X, occupied.coord.Y] = occupied.square.Tile.Score == 0; // Blank tiles have score = 0
             }
         }
 

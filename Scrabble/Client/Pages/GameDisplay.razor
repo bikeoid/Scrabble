@@ -6,6 +6,7 @@
 @using System.Text
 @using Scrabble.Core
 @using Scrabble.Core.Config
+@using Scrabble.Core.AI
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using Scrabble.Client.Components
@@ -98,7 +99,7 @@ else
                 <!-- 15rem => 240px -->
                 <!-- @{string score_card_style_options = "width: 10rem; max-width: 12rem";} -->
                 @{string score_card_style_options = "min-width: 10rem; max-width: 12rem";}
-                @{string TotalMoveDuration = "";}
+                @{string TotalMoveDuration = ""; string TileCount = "";}
                 @if (currentGame.FinalGameStatus == null)
                 {
                     <!-- the game is still in progress -->
@@ -110,24 +111,41 @@ else
                         border_decoration_your_go = "";
                     }
                     <!-- Display the current player at the top with a blue background -->
+                    <!-- Skill is in here too so could display computer Icon and the computer proficiency level :-) -->
+                    <!-- for the current player they could be moving tiles between board and rack which would cause -->
+                    <!-- the number of tiles information to keep changing, so fix it to the total number of tiles in -->
+                    <!-- the rack and being placed on the board -->
+                    int totTiles = 0;
                     @for (int i = 0; i < currentGame.players.Count; i++)
                     {
                         @if (currentGame.players[i].MyTurn)
                         {
+                            TileCount = "";
+                            totTiles = currentGame.players[i].Tiles.Count + WordInPlay.Count;
+                            if (totTiles > 0 && totTiles < 7 && currentGame.TileBag.Inventory.Count == 0)
+                                TileCount = "[" + totTiles + "]";
                             TotalMoveDuration = PrintTimeSpan(currentGame.players[i].TotalMoveDuration);
                             j = i;
                             <div class=@($"card mb-2 text-white bg-info {border_decoration_your_go}") style=@($"{score_card_style_options}")>
-                                <h5 class="card-header">@currentGame.players[i].Name</h5>
+                                <h5 class="card-header">@currentGame.players[i].Name @TileCount</h5>
                                 <h4 class="card-body" style="text-align: right; font-weight: bold;">@currentGame.players[i].Score</h4>
                                 <div class="card-footer" style="text-align: right; font-style: italic;">@TotalMoveDuration</div>
                             </div>
                         }
                     }
-                    string border_decoration_track_me = "";
+
                     <!-- Display the other players below with decreasing opacity -->
+                    string border_decoration_track_me = "";
                     @for (int i = 0; i < currentGame.players.Count - 1; i++)
                     {
                         j = (j + 1) % currentGame.players.Count;
+
+                        TileCount = "";
+                        @if (currentGame.players[j].Tiles.Count > 0 && currentGame.players[j].Tiles.Count < 7 && currentGame.TileBag.Inventory.Count == 0)
+                        {
+                            TileCount = "[" + currentGame.players[j].Tiles.Count + "]";
+                        }
+
                         TotalMoveDuration = PrintTimeSpan(currentGame.players[j].TotalMoveDuration);
                         @if (currentGame.players[j].Name == myName)
                         {
@@ -141,7 +159,7 @@ else
                         {
                             opacity -= 25;
                             <div class=@($"card mb-2 text-black bg-secondary bg-opacity-{opacity} {border_decoration_track_me}") style=@($"{score_card_style_options}")>
-                                <h6 class="card-header">@currentGame.players[j].Name</h6>
+                                <h6 class="card-header">@currentGame.players[j].Name @TileCount</h6>
                                 <h5 class="card-body" style="text-align: right;">@currentGame.players[j].Score</h5>
                                 <div class="card-footer" style="text-align: right; font-style: italic;">@TotalMoveDuration</div>
                             </div>
@@ -335,6 +353,12 @@ else
                                 {
                                     if (WordInPlay.Count == 0)
                                     {
+                                    <!--
+                                        <button type="button" class=@($"btn {button_standard_settings}")
+                                                style="--bs-btn-bg: var(--bs-orange); --bs-btn-hover-bg: #{shade-color(var(--bs-orange), 15%)}; color: black;"
+                                                data-bs-toggle="modal" data-bs-target="#ConfirmationModal_Pass">Pass
+                                        </button>
+                                    -->
                                         <button type="button" class=@($"btn {button_standard_settings}")
                                                 style="--bs-btn-bg: var(--bs-orange); --bs-btn-hover-bg: #fb8c00; color: black;"
                                                 data-bs-toggle="modal" data-bs-target="#ConfirmationModal_Pass">Pass
@@ -498,6 +522,11 @@ else
 
     private string MessageForLocalHuman { get; set; }
     private string LoadMessage { get; set; } = "Loading game...";
+
+    // use this to log info about what the best move for a user would have been
+    // in the console log, so that the user can see what they could have done better
+    public List<Tile> tileRack_BeforeMove;
+    private GameDto currentMoveGameDto_BeforeMove = null;
 
     private GameDto currentMoveGameDto = null; // For advisory move: State at start of move
     // For use when owl is invoked: set at start of move to save current state to be restored once
@@ -733,6 +762,10 @@ else
 
             if (MyMove)
             {
+                currentMoveGameDto_BeforeMove = CloneGameDto(gameDto);
+                tileRack_BeforeMove = new List<Tile>();
+                foreach (Tile t in TilesInRack)
+                    tileRack_BeforeMove.Add(t);
                 currentMoveGameDto = CloneGameDto(gameDto);
             } else
             {
@@ -1220,6 +1253,26 @@ else
 
     private async Task Play()
     {
+        // show the user what a chump they've been :-)
+        // displayed only once user has played their move so no cheating possible
+        // (at least on the current move but it could inform the choice for the next move)
+        // and used only when it's Man vs Machine cf the Owl option which is only
+        // available for games with only human participants
+        bool machine = false;
+        foreach (var p in currentGame.players)
+            if (p is ComputerPlayer) machine = true;
+
+        if (machine && currentGame.players.Count == 2)
+        {
+            var moveSuggestion = new ComputerMoveSuggestion();
+            //Console.WriteLine("[" + string.Join(", ", tileRack_BeforeMove.Select(t => t.Letter)) + "]");
+            ScrabbleMove bestmove = await moveSuggestion.ShowBestMoveAsync(currentMoveGameDto_BeforeMove, tileRack_BeforeMove);
+            if (bestmove == null)
+                Console.WriteLine("Play() : No valid move found");
+            else
+                Console.WriteLine("Play() : The best move found was : " + bestmove.PrintMe());
+        }
+
         var nPlayed = WordInPlay.Count;
 
         var placeMoveDto = new PlaceMoveDto();
@@ -1651,6 +1704,17 @@ else
                     //Console.WriteLine("ID list is '" + idList + "'");
                     actionsToRunAfterRender.Add((JS_RmEventListenerForIdList, idList));
                 }
+
+                // keep up to date so can give the user the low down on the best move they could have made.
+                // it's not ideal. it would be better to do it when we get the ClientReceiveMove event but
+                // it seems we don't get that event following a move by the computer player
+                // i guess it's because the code path for the computer player doesn't follow the same
+                // route as a human player move. it would be nice to have a single code path for all moves
+                // and might simplify things
+                currentMoveGameDto_BeforeMove = CloneGameDto(gameDto);
+                tileRack_BeforeMove = new List<Tile>();
+                foreach (Tile t in TilesInRack)
+                    tileRack_BeforeMove.Add(t);
             }
         }
 

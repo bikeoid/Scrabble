@@ -152,8 +152,6 @@ app.MapRazorComponents<App>()
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
 
-string rootpath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot");
-string filePath = System.IO.Path.Combine(rootpath, "TWL06a.txt");
 WordLookupSingleton.InitializeWordList(app.Services.GetRequiredService<ComputerPlayerAI>());
 
 var scope = app.Services.CreateScope();

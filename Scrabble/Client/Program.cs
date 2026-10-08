@@ -10,6 +10,8 @@ using Scrabble.Shared.Auth;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
+// for accessing the appsettings.json file
+builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 // Non-secured API request
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
@@ -34,15 +36,13 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddSingleton<AuthenticationStateProvider, PersistentAuthenticationStateProvider>();
 builder.Services.AddSingleton<Scrabble.Core.AI.ComputerPlayerAI>();
 
-
 //await builder.Build().RunAsync();
 var host = builder.Build();
 
 var httpClient = host.Services.GetRequiredService<HttpClient>();
 
-await WordLookupSingleton.InitializeWordListInstance(httpClient, host.Services.GetRequiredService<ComputerPlayerAI>(), "TWL06a.txt?v=4");
+await WordLookupSingleton.InitializeWordListInstance(httpClient, host.Services.GetRequiredService<ComputerPlayerAI>());
 
 AuthCache.AuthHttpClient = httpClient;
 
 await host.RunAsync();
-

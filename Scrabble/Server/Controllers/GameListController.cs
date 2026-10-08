@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using Scrabble.Client.Components;
 using Scrabble.Client.Pages;
 using Scrabble.Core.Types;
+using Scrabble.Core.AI;
 using Scrabble.Server.Data;
 using Scrabble.Shared;
 
@@ -121,11 +122,8 @@ namespace Scrabble.Server.Controllers
                         {
                             if (playerGame.Player.Name.Equals("Computer", StringComparison.OrdinalIgnoreCase))
                             {
-                                if (Enum.IsDefined(typeof(NewOpponent.Level), referencedPlayer.Skill))
-                                {
-                                    var skillEnum = (NewOpponent.Level)referencedPlayer.Skill;
-                                    name = $"Computer ({skillEnum})";
-                                }
+                                var skillEnum = SkillNameMap.toProficiencyName((SkillLevel)referencedPlayer.Skill);
+                                name = $"Computer ({skillEnum})";
                             }
                             else
                             {
@@ -154,6 +152,5 @@ namespace Scrabble.Server.Controllers
 
             return Ok(returnGames);
         }
-
     }
 }
