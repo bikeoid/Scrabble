@@ -97,7 +97,7 @@ namespace Scrabble.Core.Types
                 this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.Count;
             } while (!this.CurrentPlayer.IsActive);
 
-            StartTheClock(false);
+            StartTheClock(true);
 
             this.CurrentPlayer.MyTurn = true;
             this.CurrentPlayer.MyMoveCount = moveCount;
@@ -184,7 +184,7 @@ namespace Scrabble.Core.Types
             Console.WriteLine(" ");
             Console.WriteLine("Move #" + MoveCount);
 
-            StartTheClock(false);
+            StartTheClock(true);
 
             this.CurrentPlayer.MyTurn = true;
             this.CurrentPlayer.MyMoveCount = moveCount;
@@ -222,26 +222,28 @@ namespace Scrabble.Core.Types
 
         private void StartTheClock(Boolean logmsg)
         {
-            CurrentPlayer.MoveStartTime = Stopwatch.GetTimestamp();
+            CurrentPlayer.MoveStartDateTime = DateTime.UtcNow;
             if (logmsg)
             {
-                Console.WriteLine("Player '" + CurrentPlayer.Name + "' [start move timer] @ " +
-                                  CurrentPlayer.MoveStartTime.ToString());
+                Console.WriteLine("Player '" + CurrentPlayer.Name + "' move timer started @ " +
+                                  CurrentPlayer.MoveStartDateTime.ToString("o"));
             }
         }
 
         private void StopTheClock(string action)
         {
-            // "stops" the move stopwatch and calculates the move duration and total duration
+            // "stops" the move timer and calculates the move duration and total duration
             // i.e. the sum of all individual move times for a player
             // logs a message to indicate what the time relates to if action is populated
-            CurrentPlayer.LastMoveDuration = Stopwatch.GetElapsedTime(CurrentPlayer.MoveStartTime, Stopwatch.GetTimestamp());
+            DateTime MoveStopDateTime = DateTime.UtcNow;
+            CurrentPlayer.LastMoveDuration = MoveStopDateTime - CurrentPlayer.MoveStartDateTime;
             CurrentPlayer.TotalMoveDuration += CurrentPlayer.LastMoveDuration;
             if (!String.IsNullOrEmpty(action))
             {
-                Console.WriteLine("Player '" + CurrentPlayer.Name + "' [" + action + "] " +
-                                  "elapsed time " + CurrentPlayer.LastMoveDuration.ToString() +
-                                  ", total time " + CurrentPlayer.TotalMoveDuration.ToString());
+                Console.WriteLine("Player '" + CurrentPlayer.Name + "' [" + action + "]" +
+                                  " move timer stopped @ " + MoveStopDateTime.ToString("o") +
+                                  ", elapsed time " + CurrentPlayer.LastMoveDuration +
+                                  ", total time " + CurrentPlayer.TotalMoveDuration);
             }
         }
 

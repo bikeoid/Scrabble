@@ -188,7 +188,7 @@ namespace Scrabble.Core.AI
                 yield break;
 
             DawgNodeLink dnl = _dnl_children;
-            while (dnl._next is not null)
+            while (dnl is not null)
             {
                 yield return (dnl._letter, dnl._dnode);
                 dnl = dnl._next;

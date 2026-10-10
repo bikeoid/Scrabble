@@ -91,7 +91,10 @@ namespace Scrabble.Shared
                 {
                     this.Skill = ((ComputerPlayer)activePlayer).Skill;
                 }
-                this.MoveStartTime = activePlayer.MoveStartTime;
+
+                this.MoveStartDateTime = activePlayer.MoveStartDateTime;
+                if (this.MoveStartDateTime == default(DateTime))
+                    this.MoveStartDateTime = DateTime.UtcNow;
                 this.LastMoveDuration = activePlayer.LastMoveDuration;
                 this.TotalMoveDuration = activePlayer.TotalMoveDuration;
             }
@@ -122,7 +125,8 @@ namespace Scrabble.Shared
             }
             public TimeSpan LastMoveDuration { get; set; }
             public TimeSpan TotalMoveDuration { get; set; }
-            public long MoveStartTime { get; set; }
+            //public long MoveStartTime { get; set; }
+            public DateTime MoveStartDateTime { get; set; }
         }
 
 

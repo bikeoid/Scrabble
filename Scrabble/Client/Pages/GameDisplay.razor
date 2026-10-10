@@ -40,7 +40,6 @@
 else
 {
     <!--
-
     What follows are two div blocks to handle the modal dialogs for user confirmation
     of the Pass and Resign options
     It feels like a lot of code duplication and that it should be possible somehow to have
@@ -98,7 +97,8 @@ else
                 <!-- 12rem => 192px -->
                 <!-- 15rem => 240px -->
                 <!-- @{string score_card_style_options = "width: 10rem; max-width: 12rem";} -->
-                @{string score_card_style_options = "min-width: 10rem; max-width: 12rem";}
+                @{string score_card_style_options = "min-width: 12rem; max-width: 15rem";}
+                @{string card_header_html = "";}
                 @{string TotalMoveDuration = ""; string TileCount = "";}
                 @if (currentGame.FinalGameStatus == null)
                 {
@@ -107,27 +107,30 @@ else
                     <!-- If I am the current player, add a border decoration to prompt me -->
                     string border_decoration_your_go = "border border-3 border-danger rounded-3";
                     @if (!MyMove)
-                    {
                         border_decoration_your_go = "";
-                    }
+
                     <!-- Display the current player at the top with a blue background -->
                     <!-- Skill is in here too so could display computer Icon and the computer proficiency level :-) -->
                     <!-- for the current player they could be moving tiles between board and rack which would cause -->
-                    <!-- the number of tiles information to keep changing, so fix it to the total number of tiles in -->
+                    <!-- the number of tiles information to keep changing, so set it to the total number of tiles in -->
                     <!-- the rack and being placed on the board -->
                     int totTiles = 0;
                     @for (int i = 0; i < currentGame.players.Count; i++)
                     {
                         @if (currentGame.players[i].MyTurn)
                         {
+                            j = i;
+
                             TileCount = "";
                             totTiles = currentGame.players[i].Tiles.Count + WordInPlay.Count;
                             if (totTiles > 0 && totTiles < 7 && currentGame.TileBag.Inventory.Count == 0)
                                 TileCount = "[" + totTiles + "]";
+
+                            card_header_html = CreateCardHeaderHtml(currentGame.players[i], TileCount);
+
                             TotalMoveDuration = PrintTimeSpan(currentGame.players[i].TotalMoveDuration);
-                            j = i;
                             <div class=@($"card mb-2 text-white bg-info {border_decoration_your_go}") style=@($"{score_card_style_options}")>
-                                <h5 class="card-header">@currentGame.players[i].Name @TileCount</h5>
+                                <h5 class="card-header d-flex">@(new MarkupString(card_header_html))</h5>
                                 <h4 class="card-body" style="text-align: right; font-weight: bold;">@currentGame.players[i].Score</h4>
                                 <div class="card-footer" style="text-align: right; font-style: italic;">@TotalMoveDuration</div>
                             </div>
@@ -142,24 +145,21 @@ else
 
                         TileCount = "";
                         @if (currentGame.players[j].Tiles.Count > 0 && currentGame.players[j].Tiles.Count < 7 && currentGame.TileBag.Inventory.Count == 0)
-                        {
                             TileCount = "[" + currentGame.players[j].Tiles.Count + "]";
-                        }
+
+                        card_header_html = CreateCardHeaderHtml(currentGame.players[j], TileCount);
 
                         TotalMoveDuration = PrintTimeSpan(currentGame.players[j].TotalMoveDuration);
                         @if (currentGame.players[j].Name == myName)
-                        {
                             border_decoration_track_me = "border border-2 border-warning rounded-3";
-                        }
                         else
-                        {
                             border_decoration_track_me = "";
-                        }
+
                         @if (currentGame.players[j].IsActive)
                         {
                             opacity -= 25;
                             <div class=@($"card mb-2 text-black bg-secondary bg-opacity-{opacity} {border_decoration_track_me}") style=@($"{score_card_style_options}")>
-                                <h6 class="card-header">@currentGame.players[j].Name @TileCount</h6>
+                                <h6 class="card-header d-flex">@(new MarkupString(card_header_html))</h6>
                                 <h5 class="card-body" style="text-align: right;">@currentGame.players[j].Score</h5>
                                 <div class="card-footer" style="text-align: right; font-style: italic;">@TotalMoveDuration</div>
                             </div>
@@ -168,11 +168,12 @@ else
                     <!-- Lastly display the inactive players in red -->
                     @for (int i = 0; i < currentGame.players.Count - 1; i++)
                     {
+                        card_header_html = CreateCardHeaderHtml(currentGame.players[i], "");
                         TotalMoveDuration = PrintTimeSpan(currentGame.players[i].TotalMoveDuration);
                         @if (!currentGame.players[i].IsActive)
                         {
                             <div class="card mb-2 text-white bg-danger" style=@($"{score_card_style_options}")>
-                                <h6 class="card-header">@currentGame.players[i].Name</h6>
+                                <h6 class="card-header d-flex">@(new MarkupString(card_header_html))</h6>
                                 <h6 class="card-body" style="text-align: right;">Resigned</h6>
                                 <div class="card-footer" style="text-align: right; font-style: italic;">@TotalMoveDuration</div>
                             </div>
@@ -192,24 +193,27 @@ else
                         int i = 0;
                         @while (shown_counter < currentGame.players.Count)
                         {
+                            card_header_html = CreateCardHeaderHtml(currentGame.players[i], "");
                             TotalMoveDuration = PrintTimeSpan(currentGame.players[i].TotalMoveDuration);
                             if (currentGame.players[i].Name == currentGame.FinalGameStatus.WinningPlayerName && !winner_shown)
                             {
                                 winner_shown = true;
                                 shown_counter++;
                                 <div class="card mb-2 text-white bg-success" style=@($"{score_card_style_options}")>
-                                    <h5 class="card-header">@currentGame.players[i].Name</h5>
+                                    <h5 class="card-header d-flex">@(new MarkupString(card_header_html))</h5>
                                     <h4 class="card-body" style="text-align: right; font-weight: bold;">@currentGame.players[i].Score</h4>
                                     <div class="card-footer" style="text-align: right; font-style: italic;">@TotalMoveDuration</div>
                                 </div>
                             }
+
                             i = (i + 1) % currentGame.players.Count;
+                            card_header_html = CreateCardHeaderHtml(currentGame.players[i], "");
                             TotalMoveDuration = PrintTimeSpan(currentGame.players[i].TotalMoveDuration);
                             if (winner_shown)
                             {
                                 shown_counter++;
                                 <div class="card mb-2 text-white bg-danger" style=@($"{score_card_style_options}")>
-                                    <h6 class="card-header">@currentGame.players[i].Name</h6>
+                                    <h6 class="card-header d-flex">@(new MarkupString(card_header_html))</h6>
                                     <h6 class="card-body" style="text-align: right;">@currentGame.players[i].Score</h6>
                                     <div class="card-footer" style="text-align: right; font-style: italic;">@TotalMoveDuration</div>
                                 </div>
@@ -221,9 +225,10 @@ else
                         <!-- a draw -->
                         @for (int i = 0; i < currentGame.players.Count; i++)
                         {
+                            card_header_html = CreateCardHeaderHtml(currentGame.players[i], "");
                             TotalMoveDuration = PrintTimeSpan(currentGame.players[i].TotalMoveDuration);
                             <div class="card mb-2 text-white bg-primary" style=@($"{score_card_style_options}")>
-                                <h6 class="card-header">@currentGame.players[i].Name</h6>
+                                <h6 class="card-header d-flex">@(new MarkupString(card_header_html))</h6>
                                 <h6 class="card-body" style="text-align: right;">@currentGame.players[i].Score</h6>
                                 <div class="card-footer" style="text-align: right; font-style: italic;">@TotalMoveDuration</div>
                             </div>
@@ -308,11 +313,9 @@ else
                             }
                             @if (currentGame.TileBag.Inventory.Count > 0 && !reloadCompletedGame && currentGame.FinalGameStatus == null)
                             {
-                                <!-- <div class="tile-bag-area"> -->
-                                    <div class="tile-bag">
-                                        @currentGame.TileBag.Inventory.Count
-                                    </div>
-                                <!-- </div> -->
+                                <div class="tile-bag">
+                                    @currentGame.TileBag.Inventory.Count
+                                </div>
                             }
                         }
                     </div>
@@ -601,10 +604,6 @@ else
         //      2.Rematch button
         //      3.An incoming request for a rematch (in this case the initialLoad flag was NOT being updated)
         await _jsModule.InvokeVoidAsync("CleanupDragAndDrop", null);
-
-        // not sure this next one is needed because when we navigate to a game the OnParametersSetAsync()
-        // method will set it to true anyway
-        //initialLoad = true;
 
         // clean up any active hub connections before we go
         if (hubConnection != null)
@@ -1999,8 +1998,7 @@ else
                 });
 
         // just want to make sure this part of the code only gets executed once per load of game page
-        // and not after any of the above callbacks have been called. i'm pretty sure it won't but this will help
-        // spot anything odd
+        // i'm pretty sure that is the case but this will help spot anything odd
         Console.WriteLine(" ");
         Console.WriteLine("*****************");
         Console.WriteLine("*** SETUP HUB ***");
@@ -2008,9 +2006,28 @@ else
         Console.WriteLine(" ");
     }
 
+    public string CreateCardHeaderHtml(Player p, string tile_count)
+    {
+        // alternatively check for type of Player object
+        if (p.Skill == -1)  // human
+            return p.Name + " " + tile_count;
+        else
+            // bi-marvin or bi-robot
+            return "<div class=\"bi-marvin\"></div>" + SkillNameMap.toProficiencyName((SkillLevel)p.Skill) + " " + tile_count;
+    }
+
     public string PrintTimeSpan(TimeSpan t)
     {
-       if (t == TimeSpan.Zero) return string.Empty;
+       if (t == TimeSpan.Zero) return "0s";
+
+       // have seen negative t be passed to this method, not sure why but must be an issue on server side
+       // perhaps with long running games or due to values not being persisted to the database correctly 
+       // or between server side restarts or a combination of all of the above - TBD...
+       // e.g. a value of t : -16.17:06:22.1022574 results in a display of -102ms on GUI.
+       // i guess each part of the TimeSpan t variable is considered negative rather than t as a whole
+       // so t.TotalSeconds < 1.0 is true so display is -ve t.Milliseconds !
+
+       if (t < TimeSpan.Zero) return "0s";
 
        string answer;
        if (t.TotalSeconds < 1.0)
