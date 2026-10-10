@@ -69,7 +69,7 @@ namespace Scrabble.Client.Data
 
                 foreach (var placeTile in move.Placements)
                 {
-                    Console.WriteLine($"letter={placeTile.Letter}, x={placeTile.Row}, y={placeTile.Col}");
+                    //Console.WriteLine($"letter={placeTile.Letter}, x={placeTile.Row}, y={placeTile.Col}");
                     // (r,c) -> (x,y)
                     Coordinate crd = new Coordinate(placeTile.Row, placeTile.Col);
                     coordinate.Add(crd);
@@ -80,8 +80,8 @@ namespace Scrabble.Client.Data
 
                 // it's unclear what the point of the sorting is as it's just a list of coordinate of where to
                 // place a tile which can be done in any old order (just like a real player might)
-                Console.WriteLine("Place tiles @ " + string.Join(", ", coordinate.Select(coord => coord.ToString())));
-                Console.WriteLine(move.IsHorizontal ? "Horizontal" : "Vertical");
+                //Console.WriteLine("Place tiles @ " + string.Join(", ", coordinate.Select(coord => coord.ToString())));
+                //Console.WriteLine(move.IsHorizontal ? "Horizontal" : "Vertical");
                 if (move.IsHorizontal)
                 {
                     coordinate = coordinate.OrderBy(coord => coord.X).ToList();

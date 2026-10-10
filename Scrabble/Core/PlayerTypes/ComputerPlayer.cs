@@ -141,21 +141,25 @@ namespace Scrabble.Core.Types
                 var coordinate = new List<Coordinate>();
                 var tile = new List<Tile>();
 
+                Console.Write("Place tiles : ");
                 foreach (var placeTile in move.Placements)
                 {
-                    Console.WriteLine($"letter={placeTile.Letter}, x={placeTile.Row}, y={placeTile.Col}");
+                    //Console.WriteLine($"letter={placeTile.Letter}, x={placeTile.Row}, y={placeTile.Col}");
                     // (r,c) -> (x,y)
                     Coordinate crd = new Coordinate(placeTile.Row, placeTile.Col);
                     coordinate.Add(crd);
                     tile.Add(FindTileInRack((GameState)implementor, placeTile));
                     //Console.WriteLine($"Placing tile {placeTile.Letter} at {crd.ToString()}");
+                    Console.Write("'" + placeTile.Letter + "' @ " + crd + " ");
                 }
+                // note the not! on the IsHorizontal test
+                Console.WriteLine(!move.IsHorizontal ? "[Horizontal]" : "[Vertical]");
                 ;
 
                 // not sure this sorting is needed or even correct based on the IsHorizontal flag value
                 // since IsHorizontal is false for a horizontal word
-                Console.WriteLine("Place tiles @ " + string.Join(", ", coordinate.Select(coord => coord.ToString())));
-                Console.WriteLine(move.IsHorizontal ? "Horizontal" : "Vertical");
+                //Console.WriteLine("Place tiles @ " + string.Join(", ", coordinate.Select(coord => coord.ToString())));
+                //Console.WriteLine(move.IsHorizontal ? "Horizontal" : "Vertical");
                 if (move.IsHorizontal)
                 {
                     coordinate = coordinate.OrderBy(coord => coord.X).ToList();

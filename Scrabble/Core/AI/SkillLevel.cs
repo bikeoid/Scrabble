@@ -80,6 +80,9 @@ namespace Scrabble.Core.AI
 
     public static class MoveSelector
     {
+        private static bool _print_2lw = false;
+        private static bool _print_3plw = false;
+
         private static readonly Random _rng = new();
 
         // ---- Public API ----------------------------------------------------------------------------------------------------------------
@@ -153,27 +156,32 @@ namespace Scrabble.Core.AI
                 Console.WriteLine(i + ". " + move.PrintMe());
             }
             */
-            Console.WriteLine("-- 2LW --");
-            i = 0;
-            foreach (var move in twos)
+            if (_print_2lw)
             {
-                i++;
-                Console.WriteLine(i + ". " + move.PrintMe());
+                Console.WriteLine("-- 2LW --");
+                i = 0;
+                foreach (var move in twos)
+                {
+                    i++;
+                    Console.WriteLine(i + ". " + move.PrintMe());
+                }
             }
-            Console.WriteLine("-- 3+LW --");
-            i = 0;
-            foreach (var move in threeplus)
+            if (_print_3plw)
             {
-                i++;
-                Console.WriteLine(i + ". " + move.PrintMe());
+                Console.WriteLine("-- 3+LW --");
+                i = 0;
+                foreach (var move in threeplus)
+                {
+                    i++;
+                    Console.WriteLine(i + ". " + move.PrintMe());
+                }
             }
-
             Console.WriteLine("Available move count is " + moves.Count +
-                                " [" + minScoreAll + " - " + maxScoreAll + ", " + Math.Round(avgScoreAll, 2) + "]");
+                              " [" + minScoreAll + " - " + maxScoreAll + ", " + Math.Round(avgScoreAll, 2) + "]");
             Console.WriteLine(" 2 letter words : " + twos.Count + 
-                                " [" + minScore2LW + " - " + maxScore2LW + ", " + Math.Round(avgScore2LW, 2) + "]");
+                              " [" + minScore2LW + " - " + maxScore2LW + ", " + Math.Round(avgScore2LW, 2) + "]");
             Console.WriteLine(" 3+ letter words : " + threeplus.Count +
-                                " [" + minScore3PLW + " - " + maxScore3PLW + ", " + Math.Round(avgScore3PLW, 2) + "]");
+                              " [" + minScore3PLW + " - " + maxScore3PLW + ", " + Math.Round(avgScore3PLW, 2) + "]");
 
             // set up the primary and fallback lists
             List<ScrabbleMove> primary = threeplus;

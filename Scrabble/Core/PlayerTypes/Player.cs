@@ -26,7 +26,8 @@ namespace Scrabble.Core.Types
 
         public int MyMoveCount { get; set; }
 
-        public long MoveStartTime { get; set; }
+        //public long MoveStartTime { get; set; }
+        public DateTime MoveStartDateTime { get; set; }
         public TimeSpan LastMoveDuration { get; set; }
         public TimeSpan TotalMoveDuration { get; set; }
 
@@ -60,7 +61,8 @@ namespace Scrabble.Core.Types
             PlayerPasses = 0;
             Score = 0;
             MyMoveCount = 0;
-            MoveStartTime = 0;
+            //MoveStartTime = 0;
+            MoveStartDateTime = new DateTime(2026,10,9);
             LastMoveDuration = TimeSpan.Zero;
             TotalMoveDuration = TimeSpan.Zero;
         }

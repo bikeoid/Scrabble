@@ -64,8 +64,18 @@ namespace Scrabble.Shared
             // because before this change no player could resign without it ending the game
             if (String.IsNullOrEmpty(activePlayer.ActiveFlag)) activePlayer.ActiveFlag = "Y";
 
-            // keep track of time taken for moves - last and overall
-            activePlayer.MoveStartTime = sourcePlayer.MoveStartTime;
+            // keep track of time taken for moves - previous move and overall total
+            // MoveStartTime is defunct because it was declared as a long and I'm not convinced
+            // the JSON Serialize/Deserialize was working correctly
+            // switch to a DateTime which is easier to read in the database and fine for our needs
+            //activePlayer.MoveStartTime = sourcePlayer.MoveStartTime;
+
+            // set default in case not in json payload
+            // if it's not set (for a game that started before this change ~ 09-Oct-26) then set it to "now"
+            activePlayer.MoveStartDateTime = sourcePlayer.MoveStartDateTime;
+            if (activePlayer.MoveStartDateTime == default(DateTime))
+                activePlayer.MoveStartDateTime = DateTime.UtcNow;
+
             activePlayer.LastMoveDuration = sourcePlayer.LastMoveDuration;
             activePlayer.TotalMoveDuration = sourcePlayer.TotalMoveDuration;
 
