@@ -33,7 +33,20 @@ namespace Scrabble.Server.Controllers
         /// <returns></returns>
         private async Task PurgeOldGames()
         {
-            var purgeDate = DateTime.Now.AddDays(-30);
+            int retentionDays = 30;
+            try
+            {
+                var config = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+                retentionDays = int.Parse(config["CompletedGameRetentionDays"]);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Unable to read configuration value 'CompletedGameRetentionDays' from appsettings.json");
+                Console.WriteLine("Using fallback value of " + retentionDays + " days");
+            }
+
+            var purgeDate = DateTime.Today.AddDays(-1 * retentionDays);
+            Console.WriteLine("Today is " + DateTime.Today + ", retain completed games for " + retentionDays + " days, delete if older than " + purgeDate);
 
             var oldGames = await (from g in scrabbleDb.Games
                                 where g.LastMoveOn < purgeDate
@@ -47,7 +60,8 @@ namespace Scrabble.Server.Controllers
                 nOldGames++;
             }
             await scrabbleDb.SaveChangesAsync();
-            _logger.Log(LogLevel.Information, $"Purged {nOldGames} old completed games.");
+            if (nOldGames > 0)
+                _logger.Log(LogLevel.Information, $"Purged {nOldGames} completed games (with last move before {purgeDate})");
         }
 
 
