@@ -1531,25 +1531,6 @@ else
         await PerformNoMove(true);
     }
 
-    /*
-    private async Task Pass()
-    {
-        var result = await Modal.Show<ConfirmationDialogue>("Are you sure you want to pass?").Result;
-        if (!result.Cancelled)
-        {
-            await PerformNoMove(false);
-        }
-    }
-    private async Task Resign()
-    {
-        var result = await Modal.Show<ConfirmationDialogue>("Are you sure you want to resign?").Result;
-        if (!result.Cancelled)
-        {
-            await PerformNoMove(true);
-        }
-    }
-    */
-
     private void Shuffle()
     {
         TilesInRack.Shuffle();
