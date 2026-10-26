@@ -67,15 +67,12 @@ builder.Services.AddAuthentication(options =>
     .AddIdentityCookies();
 
 var connectionString = builder.Configuration.GetConnectionString("ScrabbleDbConnection") ?? throw new InvalidOperationException("Connection string 'ScrabbleDbConnection' not found.");
-builder.Services.AddDbContext<ScrabbleDbContext>(options =>
-    options.UseSqlServer(connectionString));
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+builder.Services.AddScrabbleDbContext(builder.Configuration);
+builder.Services.AddApplicationDbContext(builder.Configuration);
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // ------- Begin Signing key storage in DB ------------------
-builder.Services.AddDbContext<MyKeysContext>(options =>
-    options.UseSqlServer(connectionString));
+builder.Services.AddMyKeysContext(builder.Configuration);
 
 builder.Services.AddDataProtection()
     .PersistKeysToDbContext<MyKeysContext>();
@@ -118,6 +115,48 @@ builder.Services.AddSignalR().AddHubOptions<MoveHub>(options =>
 builder.Services.AddSingleton<Scrabble.Core.AI.ComputerPlayerAI>();
 
 var app = builder.Build();
+
+// Ensure the database is created and migrations are applied at startup
+using (var dbScope = app.Services.CreateScope())
+{
+    var applicationDbContext = dbScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    try
+    {
+        applicationDbContext.Database.Migrate(); // Ensures DB is created and migrations applied
+    }
+    catch (Exception ex)
+    {
+        // Log and handle migration errors
+        var logger = dbScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while applying migrations.");
+        throw; // rethrow to stop app if migration fails
+    }
+    var scrabbleDbContext = dbScope.ServiceProvider.GetRequiredService<ScrabbleDbContext>();
+    try
+    {
+        scrabbleDbContext.Database.Migrate(); // Ensures DB is created and migrations applied
+    }
+    catch (Exception ex)
+    {
+        // Log and handle migration errors
+        var logger = dbScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while applying migrations.");
+        throw; // rethrow to stop app if migration fails
+    }
+    var myKeysContext = dbScope.ServiceProvider.GetRequiredService<MyKeysContext>();
+    try
+    {
+        myKeysContext.Database.Migrate(); // Ensures DB is created and migrations applied
+    }
+    catch (Exception ex)
+    {
+        // Log and handle migration errors
+        var logger = dbScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while applying migrations.");
+        throw; // rethrow to stop app if migration fails
+    }
+}
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

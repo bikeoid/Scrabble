@@ -4,12 +4,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Scrabble.Server.Data;
 
-class MyKeysContext : DbContext, IDataProtectionKeyContext
+public class MyKeysContext : DbContext, IDataProtectionKeyContext
 {
     // A recommended constructor overload when using EF Core 
     // with dependency injection.
     public MyKeysContext(DbContextOptions<MyKeysContext> options)
-        : base(options) { }
+        : base(options) {
+        Database.Migrate();
+    }
 
     // This maps to the table that stores keys.
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }

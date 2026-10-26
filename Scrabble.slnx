@@ -2,6 +2,9 @@
   <Folder Name="/Solution Items/">
     <File Path="README.md" />
   </Folder>
+  <Project Path="Scrabble/Data/Scrabble.Data.csproj" Id="1857c13c-7310-4565-aeda-0919adfca0a5" />
+  <Project Path="Scrabble/SQLiteMigrations/Scrabble.SQLiteMigrations.csproj" Id="8550ca73-5e4a-4451-b02b-a63b3f576884" />
+  <Project Path="Scrabble/SqlServerMigrations/Scrabble.SqlServerMigrations.csproj" Id="317e339d-577d-4894-ac45-8ffd91384e38" />
   <Project Path="Scrabble/Client/Scrabble.Client.csproj" />
   <Project Path="Scrabble/Core/Scrabble.Core.csproj" />
   <Project Path="Scrabble/Modal/src/Blazored.Modal/Blazored.Modal.csproj" />

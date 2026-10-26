@@ -39,7 +39,7 @@ namespace Scrabble.Server.Controllers
                 var config = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
                 retentionDays = int.Parse(config["CompletedGameRetentionDays"]);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Console.WriteLine("Unable to read configuration value 'CompletedGameRetentionDays' from appsettings.json");
                 Console.WriteLine("Using fallback value of " + retentionDays + " days");

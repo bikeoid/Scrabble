@@ -9,24 +9,32 @@ A Blazor implementation of the classic word game with features:
  * Immediate feedback when placing tiles for a move to confirm valid word(s) and valid placement
  * A 'professor' icon is shown after player's move unless playing directly against the computer.  This is an
 option to request the computer make a move to compare against the player's board and rack.   This can often
-point out new words or ways to improve scores.
+point out new words or ways to improve scores.  
 
 ![Professor Owl](./Scrabble/Client/wwwroot/images/ProfessorOwl2.png ) 
 
 ## Getting started
-The application was developed using Visual Studio 2026 with .NET 10 and Blazor.  Before it can be run, the databases must be
-created by running this command in the "Package Manager Console" (Select Scrabble.Server as the Default Project):
-``` 
-Update-Database -Context "ApplicationDbContext"
-Update-Database -Context "ScrabbleDbContext" 
-Update-Database -Context "MyKeysContext"
+The application was developed using Visual Studio 2026 with .NET 10 and Blazor.  The database is created automatically when the application 
+is first run.   Database storage can be SQL Server, SQL Express, or SQLite.  The application is configured to use mssqllocaldb but could be 
+redirected to other databases as specified appsettings.json.
+
+It may be published with the Visual Studio Build/Publish feature, or to build from source - run from the top level directory containing the
+solution file Scrabble.sln:
+Windows - 
 ```
+dotnet publish -c Release -r win-x64 --self-contained true --output published
+```
+   Executable is Scrabble.Server.exe in the ./published folder.
+Linux - 
+```
+dotnet publish -c Release -r linux-x64 --self-contained true --output published
+    or for Raspberry Pi 64 bit OS -
+dotnet publish -c Release -r linux-arm64 --self-contained true --output published
+```
+  Executable is Scrabble.Server in the  ./published folder.
+
 The first user to register is created as the administrator, along with the computer player.   The computer can
-then be challenged for the first game.
-
-The application is configured to use mssqllocaldb but could be redirected to other SQL databases.
-
-## Note that 1.0.1 requires a 3rd Update-Database statement above for local keys storage
+then be challenged for the first game at a choice of skill level.
 
  ## Drag and Drop
  Drag and drop is mostly self explanatory but some helpful behavior:
@@ -75,8 +83,7 @@ and comment out line 64:  ```DisplayConfirmAccountLink = true;```
   "Authentication:Google:ClientSecret": "xxxxxx-xxxxxxxxxxxxxx"
 ``` 
  ## Layout
- The program should adapt to web browsers all the way from from desktop to mobile.  On mobile the game is best played in portrait mode 
- and has not been adapted to landscape mode.
+ The program should adapt to web browsers all the way from from desktop to mobile.  On mobile the game is best played in landscape mode.
 
 
 ## The Dictionary
@@ -91,8 +98,7 @@ An alternative European English dictionary is SOWPODS.txt from https://www.wordg
 * Offline play against computer.   Although the game definition and dictionary can reside locally, this is 
 currently not implemented.
 * Offline play of active game(s) which will post the move(s) when reconnected.
-* Optimized computer algorithms with multiple difficulty levels.  Currently implements only Appel-Jacobson DAWG algorithm.
-* Player performance tallies.  (Currently completed games are purged after 30 days)
+* Player performance tallies.  (Currently completed games are purged after 30 days, or according to the settings in appsettings.json)
 
 
 ## 2026 Upgrade to DotNet 10
@@ -101,7 +107,10 @@ I still play the game every day with a small group.
 
 * Some web servers cannot handle the 'range' header value and would return 416 instead of playing audio.  The workaround came by calling a Javascript 
 routine to load the sound file into a blob without using the range header, then pass that to the browser audio player.
-
+* SQLite was added as an alternative database for those who do not have SQL Server or SQL Express.  See SQLITE_DATABASE_GUIDE.md for 
+instructions on how to configure the application to use SQLite.   This required breaking up the Scrabble.Server project to 
+separate the migrations and data from the main project to allow for multiple database providers.  The migrations are now in Scrabble.SQLiteMigrations 
+and Scrabble.SQLServerMigrations projects.  The database provider is selected in the Scrabble.Server\Program.cs based on the appsettings.json file.
 
 # Credits
 
@@ -118,4 +127,5 @@ routine to load the sound file into a blob without using the range header, then 
 * Professor image derived from https://publicdomainvectors.org/en/free-clipart/Owl-instructor/81112.html
 * Scrabble in Blazor for inspiration and some ideas https://github.com/ddashwood/Scrabble
 * Sharpscrabble SVN code imported to https://github.com/vbasarkar/sharpscrabble
+* Additional game features, fixes and improvements from [sumnerk](https://github.com/sumnerk)
 

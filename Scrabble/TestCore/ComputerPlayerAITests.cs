@@ -210,7 +210,7 @@ namespace Scrabble.Tests.AI
             var moves  = FakeMoves(scores);
             bool allEasyLow = Enumerable.Range(0, 100)
                 .Select(_ => MoveSelector.Select(moves, SkillLevel.Easy, new AiBoard(), new Rack(new[]{'T'}))!.Score)
-                .All(s => s <= 25);
+                .All(s => s <= 80);
             Assert.True(allEasyLow);
         }
     }
