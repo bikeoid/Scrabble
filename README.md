@@ -22,14 +22,14 @@ It may be published with the Visual Studio Build/Publish feature, or to build fr
 solution file Scrabble.sln:
 Windows - 
 ```
-dotnet publish -c Release -r win-x64 --self-contained true --output published
+dotnet publish Scrabble\Server -c Release -r win-x64 --self-contained true --output published
 ```
    Executable is Scrabble.Server.exe in the ./published folder.
 Linux - 
 ```
-dotnet publish -c Release -r linux-x64 --self-contained true --output published
+dotnet publish Scrabble/Server -c Release -r linux-x64 --self-contained true --output published
     or for Raspberry Pi 64 bit OS -
-dotnet publish -c Release -r linux-arm64 --self-contained true --output published
+dotnet publish Scrabble/Server -c Release -r linux-arm64 --self-contained true --output published
 ```
   Executable is Scrabble.Server in the  ./published folder.
 
