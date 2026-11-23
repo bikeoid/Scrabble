@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Scrabble.Server.Data;
 using Scrabble.Shared;
-using Azure;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Scrabble.Server.Controllers

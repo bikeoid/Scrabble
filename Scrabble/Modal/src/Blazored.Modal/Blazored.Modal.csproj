@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
@@ -33,10 +33,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.14" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.14" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" />
-    <PackageReference Include="Microsoft.JSInterop.WebAssembly" Version="10.0.14" />
+    <PackageReference Include="Microsoft.AspNetCore.Components" Version="11.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="11.0.0" />
+    <PackageReference Include="Microsoft.JSInterop.WebAssembly" Version="11.0.0" />
   </ItemGroup>
 
   <ItemGroup>

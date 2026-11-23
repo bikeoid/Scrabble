@@ -14,7 +14,7 @@ point out new words or ways to improve scores.
 ![Professor Owl](./Scrabble/Client/wwwroot/images/ProfessorOwl2.png ) 
 
 ## Getting started
-The application was developed using Visual Studio 2026 with .NET 10 and Blazor.  The database is created automatically when the application 
+The application was developed using Visual Studio 2026 with .NET 11 and Blazor.  The database is created automatically when the application 
 is first run.   Database storage can be SQL Server, SQL Express, or SQLite.  The application is configured to use mssqllocaldb but could be 
 redirected to other databases as specified appsettings.json.
 
@@ -101,7 +101,7 @@ currently not implemented.
 * Player performance tallies.  (Currently completed games are purged after 30 days, or according to the settings in appsettings.json)
 
 
-## 2026 Upgrade to DotNet 10
+## 2026 Upgrade to DotNet 11
 
 I still play the game every day with a small group.
 

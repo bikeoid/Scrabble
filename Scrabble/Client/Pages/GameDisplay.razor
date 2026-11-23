@@ -1202,7 +1202,6 @@ else
     private void StartSwap()
     {
         IsSwapping = true;
-        StateHasChanged();  // update buttons show/don't show
     }
 
     private async void StopSwap()
@@ -1246,8 +1245,6 @@ else
         // success
         IsSwapping = false;
         SwappingTiles.Clear();
-
-        StateHasChanged();
     }
 
     private async Task Play()
@@ -1327,8 +1324,6 @@ else
             Console.WriteLine($"Problem placing/retrieving move: {ex}");
         }
         IsSubmitting = false;
-
-        StateHasChanged();
     }
 
     private GameDto CloneGameDto(GameDto original)
@@ -1358,7 +1353,6 @@ else
 
         if (!professorMoveValid)
         {
-            StateHasChanged();
             await Task.Delay(TimeSpan.FromMilliseconds(100));  // Update UI
 
             //Stopwatch stopwatch = Stopwatch.StartNew();
@@ -1428,8 +1422,6 @@ else
 
         saveGameStateDto = null;
         showProfessorDialog = false;
-
-        StateHasChanged();
     }
 
     private async Task ProfessorDialogOk()
@@ -1534,7 +1526,6 @@ else
     private void Shuffle()
     {
         TilesInRack.Shuffle();
-        StateHasChanged();
     }
 
     /// <summary>
@@ -1877,7 +1868,6 @@ else
             Console.WriteLine(ex.ToString());
         }
         IsSubmitting = false;
-        StateHasChanged();
     }
 
     private async Task SetupHub()

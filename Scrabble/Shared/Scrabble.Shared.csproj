@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyVersion>1.1.0.0</AssemblyVersion>
@@ -10,8 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Blazilla" Version="2.4.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.14" />
+    <PackageReference Include="Blazilla" Version="3.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="11.0.0" />
   </ItemGroup>
 
   <ItemGroup>
